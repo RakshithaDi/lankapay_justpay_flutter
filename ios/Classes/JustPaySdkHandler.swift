@@ -1,0 +1,190 @@
+import Foundation
+
+#if canImport(LPTrustedSDK)
+import LPTrustedSDK
+
+final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
+  private enum Stage {
+    case idle
+    case creatingIdentity
+    case signing
+    case validatingMobile
+  }
+
+  private let manager: LPTrustedSDKManager
+  private var stage: Stage = .idle
+  private var completion: (([String: Any]) -> Void)?
+  private var justPayCode: String = ""
+  private var signature: String = ""
+  private var contentToSign: String = ""
+
+  override init() {
+    guard let sdkManager = LPTrustedSDKManager.getInstance() as? LPTrustedSDKManager else {
+      fatalError("LPTrustedSDKManager instance unavailable")
+    }
+    manager = sdkManager
+    super.init()
+    manager.delegate = self
+  }
+
+  func deviceId() -> String {
+    return manager.getDeviceId()
+  }
+
+  func createIdentityAndSign(
+    challenge: String,
+    contentToSign: String,
+    completion: @escaping ([String: Any]) -> Void
+  ) {
+    self.completion = completion
+    do {
+      let justPayConfig = try loadJson(named: "justpay")
+      let mnvConfig = try loadJson(named: "mnv")
+
+      try require(justPayConfig, "url")
+      try require(justPayConfig, "package")
+      try require(justPayConfig, "justpay_code")
+      try require(justPayConfig, "key_encipher")
+      try require(justPayConfig, "key_signer")
+      try require(justPayConfig, "justpay_cert")
+      try require(justPayConfig, "issuer")
+      try require(mnvConfig, "dialog")
+      try require(mnvConfig, "hutch")
+      try require(mnvConfig, "mobitel")
+
+      justPayCode = try require(justPayConfig, "justpay_code")
+      signature = ""
+      self.contentToSign = contentToSign
+
+      if manager.isIdentityExist(justPayCode) {
+        stage = .signing
+        manager.signMessage(justPayCode, message: self.contentToSign)
+      } else {
+        stage = .creatingIdentity
+        manager.createIdentity(justPayCode, challenge: challenge)
+      }
+    } catch {
+      finish(
+        success: false,
+        message: "JustPay config/init error: \(error.localizedDescription)",
+        signature: "",
+        mobileReference: ""
+      )
+    }
+  }
+
+  func onIdentitySuccess() {
+    guard stage == .creatingIdentity else { return }
+    stage = .signing
+    manager.signMessage(justPayCode, message: contentToSign)
+  }
+
+  func onIdentityFailed(_ errorCode: Int32, message errorMessage: String) {
+    finish(
+      success: false,
+      message: "Identity creation failed (\(errorCode)): \(errorMessage)",
+      signature: "",
+      mobileReference: ""
+    )
+  }
+
+  func onMessageSignSuccess(_ signedMessage: String, status: String) {
+    guard stage == .signing else { return }
+    signature = signedMessage
+    stage = .validatingMobile
+    manager.validateMobile(justPayCode)
+  }
+
+  func onMessageSignFailed(_ errorCode: Int32, message errorMessage: String) {
+    finish(
+      success: false,
+      message: "Message signing failed (\(errorCode)): \(errorMessage)",
+      signature: "",
+      mobileReference: ""
+    )
+  }
+
+  func onValidateMobileSuccess(_ token: String) {
+    finish(success: true, message: "OK", signature: signature, mobileReference: token)
+  }
+
+  func onValidateMobileFailed(_ errorCode: Int, message errorMessage: String) {
+    finish(
+      success: false,
+      message: "Mobile validation failed (\(errorCode)): \(errorMessage)",
+      signature: "",
+      mobileReference: ""
+    )
+  }
+
+  private func finish(success: Bool, message: String, signature: String, mobileReference: String) {
+    stage = .idle
+    let payload: [String: Any] = [
+      "success": success,
+      "message": message,
+      "signature": signature,
+      "mobileReference": mobileReference
+    ]
+    DispatchQueue.main.async { [weak self] in
+      self?.completion?(payload)
+      self?.completion = nil
+    }
+  }
+
+  private func loadJson(named name: String) throws -> [String: Any] {
+    guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+      throw NSError(
+        domain: "JustPay",
+        code: -1,
+        userInfo: [NSLocalizedDescriptionKey: "\(name).json not found in app bundle"]
+      )
+    }
+    let data = try Data(contentsOf: url)
+    let object = try JSONSerialization.jsonObject(with: data, options: [])
+    guard let json = object as? [String: Any] else {
+      throw NSError(
+        domain: "JustPay",
+        code: -2,
+        userInfo: [NSLocalizedDescriptionKey: "\(name).json is not a valid JSON object"]
+      )
+    }
+    return json
+  }
+
+  private func require(_ json: [String: Any], _ key: String) throws -> String {
+    guard let value = json[key] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      throw NSError(domain: "JustPay", code: -3, userInfo: [NSLocalizedDescriptionKey: "Missing key '\(key)'"])
+    }
+    return value
+  }
+}
+
+#else
+
+/// Stub used when `LPTrustedSDK.xcframework` is not linked (e.g. local analysis). Integrators must
+/// add the framework so `canImport(LPTrustedSDK)` succeeds and the real handler is compiled.
+final class JustPaySdkHandler: NSObject {
+  func deviceId() -> String {
+    return ""
+  }
+
+  func createIdentityAndSign(
+    challenge: String,
+    contentToSign: String,
+    completion: @escaping ([String: Any]) -> Void
+  ) {
+    let payload: [String: Any] = [
+      "success": false,
+      "message":
+        "LPTrustedSDK is not linked. Add LPTrustedSDK.xcframework to your iOS app per the plugin README "
+        + "(Embed & Sign, framework search paths).",
+      "signature": "",
+      "mobileReference": ""
+    ]
+    DispatchQueue.main.async {
+      completion(payload)
+    }
+  }
+}
+
+#endif

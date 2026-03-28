@@ -1,0 +1,15 @@
+# Never ship proprietary LankaPay / bank SDK binaries with this package.
+**/LPTrustedSDK.aar
+**/LPTrustedSDK.xcframework
+**/JustPaySDK/*.xcframework
+
+# Local build / tooling (especially when publishing without git)
+build/
+**/build/
+.dart_tool/
+**/.dart_tool/
+*.iml
+.idea/
+
+# Internal planning (optional); remove this line if you want it on pub.dev
+justpay_flutter_package_072e7ab1.plan.md
