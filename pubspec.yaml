@@ -3,7 +3,7 @@ description: >
   Flutter plugin bridging LankaPay LPTrusted (JustPay): getDeviceId and
   createIdentityAndSign over MethodChannel justpay_sdk/methods. Host apps must
   supply bank JSON and SDK binaries per README.
-version: 0.2.0
+version: 0.2.1
 homepage: https://github.com/ideahub/lankapay_justpay_flutter
 repository: https://github.com/ideahub/lankapay_justpay_flutter
 issue_tracker: https://github.com/ideahub/lankapay_justpay_flutter/issues

@@ -1,3 +1,7 @@
+## 0.2.1
+
+* README: remove redundant pub.dev publishing checklist (integrators use this README on pub.dev).
+
 ## 0.2.0
 
 * Android plugin Java/Kotlin package and Gradle **namespace** moved from `com.example.lankapay_justpay_flutter` to **`lk.lankapay.justpay_flutter`**.

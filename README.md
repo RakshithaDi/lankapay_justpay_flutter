@@ -23,7 +23,7 @@ This package does **not** include bank REST APIs, onboarding UI, or LankaPay pro
 
 ```yaml
 dependencies:
-  lankapay_justpay_flutter: ^0.2.0
+  lankapay_justpay_flutter: ^0.2.1
 ```
 
 Path / git:
@@ -155,10 +155,3 @@ If you previously wired LPTrusted yourself in **`MainActivity`** / **`FlutterAct
 3. Keep Firebase, notifications, and other channels as they are.  
 4. This plugin registers **`justpay_sdk/methods`** only; remove any old app-specific JustPay channel name from your code.  
 5. Run a full JustPay onboarding regression on Android and iOS.  
-
-## Publishing checklist (pub.dev)
-
-- `LICENSE`, `CHANGELOG.md`, this **README**  
-- `homepage` / `repository` URLs set in `pubspec.yaml`  
-- `flutter pub publish --dry-run` until clean  
-- Do not publish bank secrets or licensed SDK binaries without approval  
