@@ -13,7 +13,7 @@ the integrator; see README.
                        DESC
   s.homepage         = 'https://github.com/ideahub/lankapay_justpay_flutter'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'IdeaHub' => 'opensource@ideahub.lk' }
+  s.author           = { 'RakshithaDi' => 'rakshithadilshan1@gmail.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
