@@ -61,7 +61,7 @@ cd ios && pod install && cd ..
    The plugin already depends on **OkHttp 4.9.3** and **json-simple 1.1.1** (`transitive = false`). You may keep the same lines in the app if your MID or other code requires them explicitly.
 
 4. **JSON config**  
-   Place **`justpay.json`** and **`mnv.json`** under **`android/app/src/main/res/raw/`** with resource names **`justpay`** and **`mnv`** (files `justpay.json` and `mnv.json`). The bridge validates required keys before calling the SDK (same checks as the reference app implementation).
+   Place **`justpay.json`** and **`mnv.json`** under **`android/app/src/main/res/raw/`** with resource names **`justpay`** and **`mnv`** (files `justpay.json` and `mnv.json`). The bridge validates required keys before calling the SDK (same checks as typical native LPTrusted integration).
 
 5. **Manifest & network**  
    - `INTERNET` permission  
@@ -136,7 +136,7 @@ Future<void> enroll() async {
 - **Missing / invalid JSON:** SDK or validation may surface errors (e.g. codes such as **201** / MNV **501** — refer to MID / bank docs).  
 - **Wrong applicationId / package:** Identity and signing can fail; align `justpay.json` with the built app id.  
 - **ATS / cleartext blocked:** Check `Info.plist` exception domains.  
-- **Identity already exists / retry:** Android bridge retries identity creation for selected error codes (300–303, 305) up to two retries after `clearIdentity()`, matching the reference app.  
+- **Identity already exists / retry:** Android bridge retries identity creation for selected error codes (300–303, 305) up to two retries after `clearIdentity()`, matching common native LPTrusted retry behavior.  
 - **iOS:** If signing fails, confirm **Embed & Sign** and framework search paths for the plugin pod.  
 
 ## Distribution variants
@@ -146,12 +146,14 @@ Future<void> enroll() async {
 | **BYO SDK (typical public pub.dev)** | Dart + native bridge source only | Add AAR, xcframework, JSON, ATS, network config in the **host app** |
 | **Private / licensed bundle** | Above + vendored AAR/xcframework | Legal clearance required; may simplify Gradle/CocoaPods setup |
 
-## Migrating from `pabc_companion`
+## Migrating from embedded native JustPay code
+
+If you previously wired LPTrusted yourself in **`MainActivity`** / **`FlutterActivity`** or **`AppDelegate`**:
 
 1. Add `lankapay_justpay_flutter` to `pubspec.yaml`.  
-2. Replace `JustPaySdkBridge` / imports from `pabc_companion/services/justpay/...` with `LankapayJustpayFlutter` from this package.  
-3. Remove the JustPay `MethodChannel` block from **`MainActivity`** / **`AppDelegate`** (keep Firebase, notifications, and other channels).  
-4. Ensure channel name in any leftover code is not still `pabc_companion/justpay_sdk` — this package uses **`justpay_sdk/methods`**.  
+2. Remove your custom JustPay **`MethodChannel`** and duplicate LPTrusted helpers from the host app; use **`LankapayJustpayFlutter`** from this package instead.  
+3. Keep Firebase, notifications, and other channels as they are.  
+4. This plugin registers **`justpay_sdk/methods`** only; remove any old app-specific JustPay channel name from your code.  
 5. Run a full JustPay onboarding regression on Android and iOS.  
 
 ## Publishing checklist (pub.dev)
@@ -160,7 +162,3 @@ Future<void> enroll() async {
 - `homepage` / `repository` URLs set in `pubspec.yaml`  
 - `flutter pub publish --dry-run` until clean  
 - Do not publish bank secrets or licensed SDK binaries without approval  
-
-## Reference implementation
-
-The bridge logic is aligned with the internal app at **`pabc-flutter-client-companion`**: Android `MainActivity.java` (JustPay channel) and iOS `AppDelegate.swift` (`JustPaySdkHandler`).
