@@ -102,6 +102,30 @@ cd ios && pod install && cd ..
 
 Swift uses `#if canImport(LPTrustedSDK)` so **analysis** can succeed when the framework is absent, but **release/debug iOS builds** that link the real module still require the xcframework at the documented path.
 
+## Verify setup (quick checklist)
+
+- `flutter pub get` succeeds  
+- `cd ios && pod install` succeeds  
+- Android: `LPTrustedSDK.aar` exists at `android/app/libs/LPTrustedSDK.aar`  
+- Android: `justpay.json` + `mnv.json` exist under `android/app/src/main/res/raw/`  
+- Android: `network_security_config.xml` exists and is referenced in `AndroidManifest.xml`  
+- iOS: `LPTrustedSDK.xcframework` exists at `ios/JustPaySDK/LPTrustedSDK.xcframework` and is embedded per MID  
+- iOS: `justpay.json` + `mnv.json` are in Runner **Copy Bundle Resources**  
+- iOS: ATS exception domains are configured per MID  
+- `justpay.json` `package` matches Android app `applicationId`  
+- `getDeviceId()` returns non-empty on a correctly configured real device  
+- `createIdentityAndSign(...)` returns success in your bank sandbox onboarding flow  
+
+## Debug support
+
+- **Logs:**  
+  - Android: filter logcat by tag `LankapayJustpay`  
+  - iOS: Xcode console lines prefixed with `[LankapayJustpay]`  
+  - Dart: debug console logs in debug builds  
+- **Debug mocks (optional):**  
+  - Use `LankapayJustpayFlutter(enableDebugMocks: true)` to simulate LPTrusted failure responses as success in **debug mode only**.  
+  - This helps continue UI flow/testing; backend may still reject dummy `signature`/`mobileReference` if strict validation is enabled.  
+
 ## Dart usage
 
 ```dart
@@ -138,6 +162,8 @@ Future<void> enroll() async {
 - **ATS / cleartext blocked:** Check `Info.plist` exception domains.  
 - **Identity already exists / retry:** Android bridge retries identity creation for selected error codes (300–303, 305) up to two retries after `clearIdentity()`, matching common native LPTrusted retry behavior.  
 - **iOS:** If signing fails, confirm **Embed & Sign** and framework search paths for the plugin pod.  
+
+For the full end-to-end integrator checklist (including XML/plist examples and extended troubleshooting), see [`doc/COMPLETE_SETUP_GUIDE.md`](doc/COMPLETE_SETUP_GUIDE.md).
 
 ## Distribution variants
 
