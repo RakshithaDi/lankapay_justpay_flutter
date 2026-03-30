@@ -1,3 +1,7 @@
+## 0.2.4
+
+* Docs: publish latest README improvements and refresh dependency snippet version.
+
 ## 0.2.3
 
 * Docs: expanded README setup guidance and synchronized README/example docs for clearer integrator onboarding.
