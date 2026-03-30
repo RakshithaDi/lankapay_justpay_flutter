@@ -1,3 +1,9 @@
+## 0.2.2
+
+* Debug: added Android/iOS/Dart logs for native flow visibility.
+* Debug-only: added `enableDebugMocks` to simulate LPTrusted failure as success to keep debug UI/backend flow moving (dummy signature/mobileReference; backend may still reject).
+* Example app UI updated to call `createIdentityAndSign`.
+
 ## 0.2.1
 
 * README: remove redundant pub.dev publishing checklist (integrators use this README on pub.dev).

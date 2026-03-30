@@ -14,15 +14,32 @@ class LankapayJustpayFlutter {
   LankapayJustpayFlutter({
     MethodChannel? channel,
     bool enableDebugLogs = kDebugMode,
+    bool enableDebugMocks = false,
   })  : _channel = channel ?? const MethodChannel(_kChannelName),
-        _enableDebugLogs = enableDebugLogs;
+        _enableDebugLogs = enableDebugLogs,
+        _enableDebugMocks = enableDebugMocks;
 
   static const String _kChannelName = 'justpay_sdk/methods';
 
+  static const String _kSimulatedMessage = 'SIMULATED_SUCCESS (debug mocks enabled)';
+  static const String _kSimulatedSignature = 'DEBUG_SIGNATURE_DUMMY';
+  static const String _kSimulatedMobileReference = 'DEBUG_MNV_TOKEN_DUMMY';
+
+  static const JustPaySdkResult _kSimulatedSuccessResult = JustPaySdkResult(
+    success: true,
+    message: _kSimulatedMessage,
+    signature: _kSimulatedSignature,
+    mobileReference: _kSimulatedMobileReference,
+  );
+
   final MethodChannel _channel;
   final bool _enableDebugLogs;
+  final bool _enableDebugMocks;
 
   bool get _debugEnabled => _enableDebugLogs && kDebugMode;
+  bool get _debugMocksEnabled => _enableDebugMocks && kDebugMode;
+
+  static JustPaySdkResult _simulatedSuccessResult() => _kSimulatedSuccessResult;
 
   /// LPTrusted device identifier (empty string if the native side returns null).
   Future<String> getDeviceId() async {
@@ -73,6 +90,12 @@ class LankapayJustpayFlutter {
       if (_debugEnabled) {
         debugPrint('[LankapayJustpayFlutter] createIdentityAndSign returned null map');
       }
+      if (_debugMocksEnabled) {
+        if (_debugEnabled) {
+          debugPrint('[LankapayJustpayFlutter] Debug mocks: simulating success from null map');
+        }
+        return _simulatedSuccessResult();
+      }
       return const JustPaySdkResult(
         success: false,
         message: 'Empty SDK response',
@@ -80,6 +103,14 @@ class LankapayJustpayFlutter {
     }
 
     final result = JustPaySdkResult.fromMap(map);
+    if (!result.success && _debugMocksEnabled) {
+      if (_debugEnabled) {
+        debugPrint(
+          '[LankapayJustpayFlutter] Debug mocks: native returned success=false, simulating success',
+        );
+      }
+      return _simulatedSuccessResult();
+    }
     if (_debugEnabled) {
       final sig = result.signature;
       final token = result.mobileReference;

@@ -46,4 +46,53 @@ void main() {
     expect(r.signature, 'sig');
     expect(r.mobileReference, 'mref');
   });
+
+  test('debug mocks: simulate success when native returns success=false',
+      () async {
+    // Override the mock handler for this test only.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+      switch (call.method) {
+        case 'getDeviceId':
+          return 'test-device-id';
+        case 'createIdentityAndSign':
+          return {
+            'success': false,
+            'message': 'native failure',
+            'signature': '',
+            'mobileReference': '',
+          };
+        default:
+          return null;
+      }
+    });
+
+    final plugin = LankapayJustpayFlutter(enableDebugMocks: true);
+    final r = await plugin.createIdentityAndSign(
+      challenge: 'c',
+      contentToSign: 'body',
+    );
+
+    expect(r.success, true);
+    expect(r.signature, isNotEmpty);
+    expect(r.mobileReference, isNotEmpty);
+
+    // Restore the default setUp handler for remaining tests.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall call) async {
+      switch (call.method) {
+        case 'getDeviceId':
+          return 'test-device-id';
+        case 'createIdentityAndSign':
+          return {
+            'success': true,
+            'message': 'OK',
+            'signature': 'sig',
+            'mobileReference': 'mref',
+          };
+        default:
+          return null;
+      }
+    });
+  });
 }

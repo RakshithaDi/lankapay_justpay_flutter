@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'lankapay_justpay_flutter'
-  s.version          = '0.2.1'
+  s.version          = '0.2.2'
   s.summary          = 'Flutter bridge for LankaPay LPTrusted (JustPay) native SDK.'
   s.description      = <<-DESC
 Wraps the LPTrusted native SDK behind a MethodChannel (`justpay_sdk/methods`) with

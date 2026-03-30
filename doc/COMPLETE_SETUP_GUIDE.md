@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.1   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.2   # or path: / git: for your team
 ```
 
 Then:
@@ -443,6 +443,7 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | iOS: empty **`getDeviceId`** | Framework not linked (stub path) or SDK not initialized; recheck Embed & Sign, **`JustPaySDK`** path, and **`pod install`**. |
 | Dart: `success: false` with config message | JSON keys missing/wrong; read **`message`** string. |
 | Debug logs (recommended) | Android: view **logcat** and filter by tag **`LankapayJustpay`**. iOS: view the **Xcode console** for lines starting with **`[LankapayJustpay]`**. Dart: debug console output (only in debug mode). |
+| Debug mocks (optional) | In debug builds you can enable failure simulation as success. This can help you continue UI/backend registration flow without native success. Enable with `LankapayJustpayFlutter(enableDebugMocks: true)`. Backend may still reject dummy `signature` or `mobileReference` if it validates strictly. |
 | Release-only crashes | **R8/ProGuard** rules; test **release** on device. |
 
 ---
