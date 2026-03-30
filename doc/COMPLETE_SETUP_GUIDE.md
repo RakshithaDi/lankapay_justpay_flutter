@@ -442,6 +442,7 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
 | iOS: empty **`getDeviceId`** | Framework not linked (stub path) or SDK not initialized; recheck Embed & Sign, **`JustPaySDK`** path, and **`pod install`**. |
 | Dart: `success: false` with config message | JSON keys missing/wrong; read **`message`** string. |
+| Debug logs (recommended) | Android: view **logcat** and filter by tag **`LankapayJustpay`**. iOS: view the **Xcode console** for lines starting with **`[LankapayJustpay]`**. Dart: debug console output (only in debug mode). |
 | Release-only crashes | **R8/ProGuard** rules; test **release** on device. |
 
 ---

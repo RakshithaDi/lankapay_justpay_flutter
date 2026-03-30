@@ -18,6 +18,12 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   private var signature: String = ""
   private var contentToSign: String = ""
 
+  private func debugLog(_ message: String) {
+    #if DEBUG
+    print("[LankapayJustpay] \(message)")
+    #endif
+  }
+
   override init() {
     guard let sdkManager = LPTrustedSDKManager.getInstance() as? LPTrustedSDKManager else {
       fatalError("LPTrustedSDKManager instance unavailable")
@@ -28,7 +34,9 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   }
 
   func deviceId() -> String {
-    return manager.getDeviceId()
+    let id = manager.getDeviceId()
+    debugLog("getDeviceId called present=\(!id.isEmpty) len=\(id.count)")
+    return id
   }
 
   func createIdentityAndSign(
@@ -36,11 +44,15 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
     contentToSign: String,
     completion: @escaping ([String: Any]) -> Void
   ) {
+    debugLog(
+      "createIdentityAndSign called challengeLen=\(challenge.count) contentToSignLen=\(contentToSign.count)"
+    )
     self.completion = completion
     do {
       let justPayConfig = try loadJson(named: "justpay")
       let mnvConfig = try loadJson(named: "mnv")
 
+      debugLog("validating required json keys for justpay.json and mnv.json")
       try require(justPayConfig, "url")
       try require(justPayConfig, "package")
       try require(justPayConfig, "justpay_code")
@@ -57,9 +69,11 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       self.contentToSign = contentToSign
 
       if manager.isIdentityExist(justPayCode) {
+        debugLog("identityExists=true -> stage=signing")
         stage = .signing
         manager.signMessage(justPayCode, message: self.contentToSign)
       } else {
+        debugLog("identityExists=false -> stage=creatingIdentity")
         stage = .creatingIdentity
         manager.createIdentity(justPayCode, challenge: challenge)
       }
@@ -75,11 +89,13 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
   func onIdentitySuccess() {
     guard stage == .creatingIdentity else { return }
+    debugLog("onIdentitySuccess -> stage=signing")
     stage = .signing
     manager.signMessage(justPayCode, message: contentToSign)
   }
 
   func onIdentityFailed(_ errorCode: Int32, message errorMessage: String) {
+    debugLog("onIdentityFailed errorCode=\(errorCode) message=\(errorMessage)")
     finish(
       success: false,
       message: "Identity creation failed (\(errorCode)): \(errorMessage)",
@@ -90,12 +106,17 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
   func onMessageSignSuccess(_ signedMessage: String, status: String) {
     guard stage == .signing else { return }
+    let signaturePresent = !signedMessage.isEmpty
+    debugLog(
+      "onMessageSignSuccess -> stage=validatingMobile signaturePresent=\(signaturePresent) signatureLen=\(signedMessage.count)"
+    )
     signature = signedMessage
     stage = .validatingMobile
     manager.validateMobile(justPayCode)
   }
 
   func onMessageSignFailed(_ errorCode: Int32, message errorMessage: String) {
+    debugLog("onMessageSignFailed errorCode=\(errorCode) message=\(errorMessage)")
     finish(
       success: false,
       message: "Message signing failed (\(errorCode)): \(errorMessage)",
@@ -105,10 +126,12 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   }
 
   func onValidateMobileSuccess(_ token: String) {
+    debugLog("onValidateMobileSuccess tokenLen=\(token.count)")
     finish(success: true, message: "OK", signature: signature, mobileReference: token)
   }
 
   func onValidateMobileFailed(_ errorCode: Int, message errorMessage: String) {
+    debugLog("onValidateMobileFailed errorCode=\(errorCode) message=\(errorMessage)")
     finish(
       success: false,
       message: "Mobile validation failed (\(errorCode)): \(errorMessage)",
@@ -119,6 +142,9 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
   private func finish(success: Bool, message: String, signature: String, mobileReference: String) {
     stage = .idle
+    debugLog(
+      "finish success=\(success) signaturePresent=\(!signature.isEmpty) signatureLen=\(signature.count) mobileRefLen=\(mobileReference.count)"
+    )
     let payload: [String: Any] = [
       "success": success,
       "message": message,
@@ -132,7 +158,9 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   }
 
   private func loadJson(named name: String) throws -> [String: Any] {
+    debugLog("loading \(name).json from main bundle")
     guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+      debugLog("\(name).json not found in main bundle")
       throw NSError(
         domain: "JustPay",
         code: -1,
@@ -140,8 +168,10 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       )
     }
     let data = try Data(contentsOf: url)
+    debugLog("\(name).json read bytes=\(data.count)")
     let object = try JSONSerialization.jsonObject(with: data, options: [])
     guard let json = object as? [String: Any] else {
+      debugLog("\(name).json is not a valid JSON object")
       throw NSError(
         domain: "JustPay",
         code: -2,
@@ -153,6 +183,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
   private func require(_ json: [String: Any], _ key: String) throws -> String {
     guard let value = json[key] as? String, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      debugLog("Missing required key: '\(key)'")
       throw NSError(domain: "JustPay", code: -3, userInfo: [NSLocalizedDescriptionKey: "Missing key '\(key)'"])
     }
     return value
@@ -164,6 +195,12 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 /// Stub used when `LPTrustedSDK.xcframework` is not linked (e.g. local analysis). Integrators must
 /// add the framework so `canImport(LPTrustedSDK)` succeeds and the real handler is compiled.
 final class JustPaySdkHandler: NSObject {
+  private func debugLog(_ message: String) {
+    #if DEBUG
+    print("[LankapayJustpay] \(message)")
+    #endif
+  }
+
   func deviceId() -> String {
     return ""
   }
@@ -173,6 +210,9 @@ final class JustPaySdkHandler: NSObject {
     contentToSign: String,
     completion: @escaping ([String: Any]) -> Void
   ) {
+    debugLog(
+      "LPTrustedSDK not linked; stub handler called (challengeLen=\(challenge.count) contentToSignLen=\(contentToSign.count))"
+    )
     let payload: [String: Any] = [
       "success": false,
       "message":

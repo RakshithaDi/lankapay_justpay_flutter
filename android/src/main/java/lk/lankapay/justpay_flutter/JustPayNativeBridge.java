@@ -1,6 +1,7 @@
 package lk.lankapay.justpay_flutter;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -25,6 +26,8 @@ import io.flutter.plugin.common.MethodChannel;
  */
 public final class JustPayNativeBridge {
 
+    private static final String TAG = "LankapayJustpay";
+
     private final Context appContext;
     private final LPTrustedSDKManager lpTrustedSDKManager;
 
@@ -36,9 +39,11 @@ public final class JustPayNativeBridge {
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         switch (call.method) {
             case "getDeviceId":
+                debugLog("getDeviceId called");
                 result.success(lpTrustedSDKManager.getDeviceID());
                 break;
             case "createIdentityAndSign":
+                debugLog("createIdentityAndSign called");
                 handleCreateIdentityAndSign(call, result);
                 break;
             default:
@@ -50,13 +55,23 @@ public final class JustPayNativeBridge {
     private void handleCreateIdentityAndSign(MethodCall call, MethodChannel.Result result) {
         String challenge = call.argument("challenge");
         String contentToSign = call.argument("contentToSign");
+        boolean challengeOk = challenge != null && !challenge.trim().isEmpty();
+        boolean contentOk = contentToSign != null && !contentToSign.trim().isEmpty();
         if (challenge == null || challenge.trim().isEmpty()
                 || contentToSign == null || contentToSign.trim().isEmpty()) {
+            if (!challengeOk) {
+                debugLog("Invalid payload: challenge is empty");
+            }
+            if (!contentOk) {
+                debugLog("Invalid payload: contentToSign is empty");
+            }
             result.success(invalidPayloadResponse());
             return;
         }
         try {
+            debugLog("Validating config files (justpay.json and mnv.json) from host res/raw");
             ensureConfigFilesAvailable();
+            debugLog("Config validation passed");
             startIdentitySignAndValidate(challenge, contentToSign, result, 0);
         } catch (Exception e) {
             HashMap<String, Object> configError = new HashMap<>();
@@ -64,6 +79,7 @@ public final class JustPayNativeBridge {
             configError.put("message", "JustPay config error: " + e.getMessage());
             configError.put("signature", "");
             configError.put("mobileReference", "");
+            debugLog("Config/init exception: " + e.getMessage());
             result.success(configError);
         }
     }
@@ -85,14 +101,18 @@ public final class JustPayNativeBridge {
     ) {
         try {
             boolean identityExists = lpTrustedSDKManager.isIdentityExist();
+            debugLog("LPTrusted identityExists=" + identityExists + " retryCount=" + retryCount);
             if (identityExists) {
+                debugLog("Stage=signing (identity exists)");
                 signAndValidateMobile(contentToSign, result);
                 return;
             }
 
+            debugLog("Stage=creatingIdentity");
             lpTrustedSDKManager.createIdentity(challenge, new CreateIdentityCallback() {
                 @Override
                 public void onSuccess() {
+                    debugLog("Identity creation success -> Stage=signing");
                     signAndValidateMobile(contentToSign, result);
                 }
 
@@ -100,25 +120,36 @@ public final class JustPayNativeBridge {
                 public void onFailed(int errorCode, String errorMessage) {
                     if ((errorCode == 300 || errorCode == 301 || errorCode == 302
                             || errorCode == 303 || errorCode == 305) && retryCount < 2) {
+                        debugLog("Identity creation failed (retryable) errorCode=" + errorCode + " -> clearIdentity and retry");
                         lpTrustedSDKManager.clearIdentity();
                         startIdentitySignAndValidate(challenge, contentToSign, result, retryCount + 1);
                         return;
                     }
+                    debugLog("Identity creation failed errorCode=" + errorCode + " message=" + errorMessage);
                     sendErrorResult(result, "Identity creation failed (" + errorCode + "): " + errorMessage);
                 }
             });
         } catch (Exception e) {
+            debugLog("Identity flow exception: " + e.getMessage());
             sendErrorResult(result, "Identity flow failed: " + e.getMessage());
         }
     }
 
     private void signAndValidateMobile(String contentToSign, MethodChannel.Result result) {
+        debugLog("Stage=signing (signMessage called)");
         lpTrustedSDKManager.signMessage(contentToSign, new SignMessageCallback() {
             @Override
             public void onSuccess(String signMessage, String status) {
+                boolean signaturePresent = signMessage != null && !signMessage.isEmpty();
+                debugLog("signMessage success stage=validatingMobile signaturePresent=" + signaturePresent
+                        + " signatureLen=" + (signaturePresent ? signMessage.length() : 0)
+                        + " status=" + status);
                 lpTrustedSDKManager.validateMobile(new ValidateMobileCallback() {
                     @Override
                     public void onSuccess(String code) {
+                        boolean tokenPresent = code != null && !code.isEmpty();
+                        debugLog("validateMobile success tokenPresent=" + tokenPresent
+                                + " tokenLen=" + (tokenPresent ? code.length() : 0));
                         HashMap<String, Object> ok = new HashMap<>();
                         ok.put("success", true);
                         ok.put("message", "OK");
@@ -129,6 +160,7 @@ public final class JustPayNativeBridge {
 
                     @Override
                     public void onFailed(int errorCode, String errorMessage) {
+                        debugLog("validateMobile failed errorCode=" + errorCode + " message=" + errorMessage);
                         sendErrorResult(result, "Mobile validation failed (" + errorCode + "): " + errorMessage);
                     }
                 });
@@ -136,6 +168,7 @@ public final class JustPayNativeBridge {
 
             @Override
             public void onFailed(int errorCode, String errorMessage) {
+                debugLog("signMessage failed errorCode=" + errorCode + " message=" + errorMessage);
                 sendErrorResult(result, "Message signing failed (" + errorCode + "): " + errorMessage);
             }
         });
@@ -147,10 +180,12 @@ public final class JustPayNativeBridge {
         error.put("message", message);
         error.put("signature", "");
         error.put("mobileReference", "");
+        debugStaticLog(message);
         result.success(error);
     }
 
     private void ensureConfigFilesAvailable() throws Exception {
+        debugLog("Loading and validating json keys: justpay.json and mnv.json");
         JSONObject justPay = loadRawJson("justpay");
         JSONObject mnv = loadRawJson("mnv");
 
@@ -168,9 +203,11 @@ public final class JustPayNativeBridge {
     }
 
     private JSONObject loadRawJson(String baseName) throws Exception {
+        debugLog("Loading res/raw/" + baseName + ".json for package " + appContext.getPackageName());
         int resId = appContext.getResources().getIdentifier(
                 baseName, "raw", appContext.getPackageName());
         if (resId == 0) {
+            debugLog("Missing res/raw/" + baseName + ".json (resource not found)");
             throw new Exception("Missing res/raw/" + baseName + ".json for package "
                     + appContext.getPackageName());
         }
@@ -179,15 +216,28 @@ public final class JustPayNativeBridge {
         int read = is.read(bytes);
         is.close();
         if (read <= 0) {
+            debugLog("Unable to read res/raw/" + baseName + ".json bytes");
             throw new Exception("Unable to read raw resource: " + baseName);
         }
+        debugLog("Loaded " + baseName + ".json bytes=" + read);
         return new JSONObject(new String(bytes, StandardCharsets.UTF_8));
     }
 
     private static void requireKey(JSONObject json, String key) throws Exception {
         String value = json.optString(key, "").trim();
         if (value.isEmpty()) {
+            debugStaticLog("Missing required json key: " + key);
             throw new Exception("Missing key: " + key);
+        }
+    }
+
+    private void debugLog(String message) {
+        debugStaticLog(message);
+    }
+
+    private static void debugStaticLog(String message) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, message);
         }
     }
 }
