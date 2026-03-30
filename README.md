@@ -23,7 +23,7 @@ This package does **not** include bank REST APIs, onboarding UI, or LankaPay pro
 
 ```yaml
 dependencies:
-  lankapay_justpay_flutter: ^0.2.2
+  lankapay_justpay_flutter: ^0.2.3
 ```
 
 Path / git:

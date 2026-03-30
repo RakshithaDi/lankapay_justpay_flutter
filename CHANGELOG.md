@@ -1,3 +1,7 @@
+## 0.2.3
+
+* Docs: expanded README setup guidance and synchronized README/example docs for clearer integrator onboarding.
+
 ## 0.2.2
 
 * Debug: added Android/iOS/Dart logs for native flow visibility.
