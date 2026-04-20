@@ -1,3 +1,7 @@
+## 0.2.5
+
+* Android: enable `buildFeatures.buildConfig` so `BuildConfig.DEBUG` resolves when compiling the library with Android Gradle Plugin 8+ (fixes `cannot find symbol: variable BuildConfig` in `JustPayNativeBridge`).
+
 ## 0.2.4
 
 * Docs: publish latest README improvements and refresh dependency snippet version.

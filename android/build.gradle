@@ -29,6 +29,10 @@ def lpTrustedSdkAar = rootProject.file("app/libs/LPTrustedSDK.aar")
 android {
     namespace = "lk.lankapay.justpay_flutter"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileSdk = 36
 
     compileOptions {
