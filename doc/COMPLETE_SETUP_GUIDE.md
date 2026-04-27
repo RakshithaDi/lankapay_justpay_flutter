@@ -140,6 +140,22 @@ dependencies {
 }
 ```
 
+If your build fails with duplicate classes from `org.apache.commons.io.*` or `org.slf4j.*`, add this in the app module:
+
+```kotlin
+configurations.configureEach {
+    exclude(group = "commons-io", module = "commons-io")
+    exclude(group = "org.slf4j", module = "slf4j-api")
+}
+```
+
+```groovy
+configurations.all {
+    exclude group: "commons-io", module: "commons-io"
+    exclude group: "org.slf4j", module: "slf4j-api"
+}
+```
+
 **`applicationId` / flavors:** The value of **`package`** inside `justpay.json` must match the **built app’s** `applicationId` (including flavor suffixes such as `.dev`). If they differ, identity and signing will fail.
 
 ---
@@ -435,6 +451,7 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Symptom | What to check |
 |--------|----------------|
 | Gradle: AAR not found | Path **`android/app/libs/LPTrustedSDK.aar`** and spelling of filename. |
+| Gradle: duplicate classes (`org.apache.commons.io.*` / `org.slf4j.*`) | LPTrustedSDK AAR may already include `commons-io` and `slf4j-api`. Exclude external duplicates in app Gradle using `configurations.configureEach { exclude(...) }` (Kotlin DSL) or `configurations.all { exclude ... }` (Groovy), then run `flutter clean`. |
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |

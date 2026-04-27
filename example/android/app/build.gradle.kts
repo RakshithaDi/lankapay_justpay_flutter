@@ -43,6 +43,13 @@ flutter {
     source = "../.."
 }
 
+configurations.configureEach {
+    // Some LPTrustedSDK AAR builds already embed commons-io and slf4j-api.
+    // Exclude external copies to avoid Duplicate class build errors.
+    exclude(group = "commons-io", module = "commons-io")
+    exclude(group = "org.slf4j", module = "slf4j-api")
+}
+
 dependencies {
     // MID-style dependencies (also pulled transitively by the plugin; listed here for clarity).
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
