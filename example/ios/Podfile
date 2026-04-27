@@ -29,8 +29,8 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
-  # Required for real device builds: vendored wrapper (see doc/LPTrustedSDK_Vendored/README.txt).
-  # Copy bank LPTrustedSDK.xcframework to ios/LPTrustedSDK.xcframework, then uncomment:
+  # MID-style: add LPTrustedSDK.xcframework in Xcode (Embed & Sign) and keep it under ios/ or ios/Runner/.
+  # Optional fallback only — see doc/LPTrustedSDK_Vendored/README.txt:
   # pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored'
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

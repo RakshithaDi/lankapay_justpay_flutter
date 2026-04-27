@@ -192,8 +192,9 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
 #else
 
-/// Stub used when `LPTrustedSDK` is not linked (e.g. local analysis). Integrators must add
-/// `LPTrustedSDK_Vendored` + `LPTrustedSDK.xcframework` per README so `canImport(LPTrustedSDK)` succeeds.
+/// Stub when `LPTrustedSDK` is not linked. Per README: MID-style Xcode embed on Runner plus
+/// `LPTrustedSDK.xcframework` on disk under `ios/` or `ios/Runner/`, then `pod install`.
+/// Optional `LPTrustedSDK_Vendored` path pod if the plugin target still cannot resolve the framework.
 final class JustPaySdkHandler: NSObject {
   private func debugLog(_ message: String) {
     #if DEBUG
@@ -203,8 +204,9 @@ final class JustPaySdkHandler: NSObject {
 
   func deviceId() -> String {
     debugLog(
-      "getDeviceId stub: LPTrustedSDK not linked at compile time (#if canImport false). "
-        + "Add LPTrustedSDK_Vendored pod + xcframework per README."
+      "getDeviceId stub: LPTrustedSDK not linked (#if canImport false). "
+        + "Place LPTrustedSDK.xcframework under ios/ or ios/Runner/, Embed & Sign on Runner, pod install; "
+        + "optional LPTrustedSDK_Vendored per README."
     )
     return ""
   }
@@ -220,8 +222,8 @@ final class JustPaySdkHandler: NSObject {
     let payload: [String: Any] = [
       "success": false,
       "message":
-        "LPTrustedSDK is not linked. Add ios/LPTrustedSDK_Vendored/ (pod) + ios/LPTrustedSDK.xcframework "
-        + "and pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored' per the plugin README.",
+        "LPTrustedSDK is not linked. Add LPTrustedSDK.xcframework under ios/ or ios/Runner/, "
+        + "Embed & Sign on Runner, run pod install (see plugin README); optional LPTrustedSDK_Vendored if needed.",
       "signature": "",
       "mobileReference": ""
     ]

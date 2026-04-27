@@ -1,5 +1,6 @@
-# Example copy — same as doc/LPTrustedSDK_Vendored/LPTrustedSDK_Vendored.podspec
-# Place bank LPTrustedSDK.xcframework at example/ios/LPTrustedSDK.xcframework for local builds.
+# Example copy — optional fallback pod (see doc/LPTrustedSDK_Vendored/README.txt).
+# For local builds: place LPTrustedSDK.xcframework at example/ios/LPTrustedSDK.xcframework
+# and uncomment pod line in example/ios/Podfile only if you need this path.
 
 Pod::Spec.new do |s|
   s.name             = 'LPTrustedSDK_Vendored'

@@ -1,5 +1,5 @@
 # Optional alternative if you publish a spec-repo pod named LPTrustedSDK.
-# For Flutter + lankapay_justpay_flutter, prefer LPTrustedSDK_Vendored (see doc/LPTrustedSDK_Vendored/).
+# For Flutter + lankapay_justpay_flutter: default is MID manual + disk under ios/; optional LPTrustedSDK_Vendored in doc/.
 
 Pod::Spec.new do |s|
   s.name             = 'LPTrustedSDK'

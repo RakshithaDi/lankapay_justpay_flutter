@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'lankapay_justpay_flutter'
-  s.version          = '0.2.11'
+  s.version          = '0.2.12'
   s.summary          = 'Flutter bridge for LankaPay LPTrusted (JustPay) native SDK.'
   s.description      = <<-DESC
 Wraps the LPTrusted native SDK behind a MethodChannel (`justpay_sdk/methods`) with
@@ -19,11 +19,14 @@ the integrator; see README.
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
 
+  # MID-style: add LPTrustedSDK.xcframework in Xcode (Runner → Embed & Sign). For Flutter, the
+  # plugin pod must also link LPTrusted — search ios/ and ios/Runner/ for the xcframework on disk.
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
+    'FRAMEWORK_SEARCH_PATHS' => '$(inherited) "${PODS_ROOT}/.." "${PODS_ROOT}/../Runner"',
+    'OTHER_LDFLAGS' => '$(inherited) -framework LPTrustedSDK',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386'
   }
-  s.dependency 'LPTrustedSDK_Vendored'
 
   s.swift_version = '5.0'
 end

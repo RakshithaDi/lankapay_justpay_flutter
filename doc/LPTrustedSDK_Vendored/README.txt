@@ -1,12 +1,15 @@
-LPTrustedSDK_Vendored (recommended for Flutter + this plugin)
+LPTrustedSDK_Vendored (optional CocoaPods fallback for Flutter + this plugin)
 
-Why:
-  The lankapay_justpay_flutter pod is a separate CocoaPods product. Linking
-  LPTrustedSDK only on the Runner app target is not enough — the plugin target
-  must see the framework too. A tiny local pod with vendored_frameworks lets
-  CocoaPods link and embed consistently (and avoids manual Runner embed cycles).
+When to use:
+  Default integration follows MID: add LPTrustedSDK.xcframework in Xcode
+  (Runner → Embed & Sign) and keep the xcframework on disk under ios/ or
+  ios/Runner/ so the plugin pod can link (see plugin README section 10).
 
-Layout in YOUR app:
+  Use this tiny path pod only if you still get Framework 'LPTrustedSDK' not
+  found for the plugin target, or an embed / thin-binary cycle between manual
+  Runner embed and [CP] Embed Pods Frameworks.
+
+Layout in YOUR app (fallback):
 
   ios/
     LPTrustedSDK.xcframework          ← from bank / LankaPay
@@ -18,7 +21,8 @@ Podfile (inside target 'Runner' do, before flutter_install_all_ios_pods):
 
   pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored'
 
-Do NOT also add LPTrustedSDK to Runner's manual "Embed Frameworks" if that
-creates a cycle with [CP] Embed Pods Frameworks — let this pod own embed/link.
+If you use this pod, avoid duplicating LPTrustedSDK in Runner's manual Embed
+Frameworks if that creates a cycle with CocoaPods embed — let the pod own
+embed/link, or follow your bank's guidance.
 
 Then: cd ios && pod install --repo-update

@@ -1,5 +1,7 @@
-# Copy this entire folder into your Flutter app's ios/LPTrustedSDK_Vendored/
-# and keep LPTrustedSDK.xcframework at ios/LPTrustedSDK.xcframework (sibling).
+# Optional fallback: copy this folder to ios/LPTrustedSDK_Vendored/ and keep
+# LPTrustedSDK.xcframework at ios/LPTrustedSDK.xcframework (sibling).
+# Default integration is MID manual Xcode + xcframework on disk under ios/ or ios/Runner/
+# (see plugin README). Use this pod if Framework not found / embed cycles persist.
 #
 # In ios/Podfile inside target 'Runner':
 #   pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored'

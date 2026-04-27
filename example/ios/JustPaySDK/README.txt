@@ -1,4 +1,6 @@
 This folder is deprecated.
 
-Use ios/LPTrustedSDK_Vendored/ + ios/LPTrustedSDK.xcframework instead.
-See doc/LPTrustedSDK_Vendored/README.txt and root README.
+Use MID-style Xcode: ios/LPTrustedSDK.xcframework (or ios/Runner/) + Embed & Sign,
+justpay.json / mnv.json on Runner. See root README section 10.
+
+Optional CocoaPods fallback: doc/LPTrustedSDK_Vendored/README.txt.
