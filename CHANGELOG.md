@@ -1,3 +1,7 @@
+## 0.2.11
+
+* iOS: when `getDeviceId` returns empty because the **stub** path is used, log a clear `[LankapayJustpay]` message in Xcode (DEBUG) so it is obvious that `LPTrustedSDK` was not linked at compile time.
+
 ## 0.2.10
 
 * iOS: depend on **`LPTrustedSDK_Vendored`** (local pod) instead of a bare `LPTrustedSDK` name, so CocoaPods links/embeds the xcframework for the **plugin pod** as well as Runner (fixes **Framework LPTrustedSDK not found** when only Runner linked the xcframework manually).
