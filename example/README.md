@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.2   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.10   # or path: / git: for your team
 ```
 
 Then:
@@ -232,20 +232,19 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
 ---
 
-## 10. iOS — LPTrustedSDK Pod source
+## 10. iOS — LPTrustedSDK via `LPTrustedSDK_Vendored` (recommended)
 
-The plugin now integrates LPTrustedSDK as a CocoaPods dependency (`s.dependency 'LPTrustedSDK'`).
+`lankapay_justpay_flutter` is its **own CocoaPods target** (a separate dynamic framework). Linking **`LPTrustedSDK.xcframework`** only on **Runner** in Xcode is often not enough — the **plugin pod** can still fail with **`Framework 'LPTrustedSDK' not found`**.
 
-Provide `LPTrustedSDK` through one of these:
+**Recommended fix:** use a tiny local pod **`LPTrustedSDK_Vendored`** with `s.vendored_frameworks = '../LPTrustedSDK.xcframework'`. See **`doc/LPTrustedSDK_Vendored/README.txt`** and copy that folder to **`ios/LPTrustedSDK_Vendored/`**.
 
-1. Your private/public spec repo where `LPTrustedSDK.podspec` is published.
-2. A local path in app `ios/Podfile` for development, for example:
+In **`ios/Podfile`** (before `flutter_install_all_ios_pods`):
 
-   ```ruby
-   pod 'LPTrustedSDK', :path => '.'
-   ```
+```ruby
+pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored'
+```
 
-See `doc/LPTrustedSDK.podspec.example` for a podspec template.
+Remove manual Runner **Embed Frameworks** for LPTrustedSDK if it creates a **cycle** with CocoaPods embed phases.
 
 ---
 
@@ -335,11 +334,9 @@ In Xcode: **Runner target → Build Settings → search “Bitcode” → Enable
 
 ## 15. iOS — Verify Pod linking
 
-1. In Xcode, select the **Runner** target and confirm `LPTrustedSDK` appears under linked frameworks.
-2. Run `pod install --repo-update` after any pod source/version change.
-3. If your MID requires Embed & Sign behavior, verify it in **Frameworks, Libraries, and Embedded Content**.
-
-If link errors occur, validate that `LPTrustedSDK` pod resolves in `Podfile.lock` and compare with a working bank sample.
+1. Run `pod install --repo-update` and open **`Runner.xcworkspace`**.
+2. Confirm **`Podfile.lock`** lists **`LPTrustedSDK_Vendored`**.
+3. Avoid duplicate manual Runner embed phases for LPTrustedSDK if they conflict with CocoaPods embed scripts.
 
 ---
 
@@ -407,7 +404,7 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] Android: **`LPTrustedSDK.aar`** exists at **`android/app/libs/LPTrustedSDK.aar`**.
 - [ ] Android: **`justpay.json`** / **`mnv.json`** exist under **`res/raw/`** with correct names.
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
-- [ ] iOS: `LPTrustedSDK` pod source configured (spec repo or `:path`) and `pod install` succeeds.
+- [ ] iOS: **`LPTrustedSDK.xcframework`**, **`LPTrustedSDK_Vendored/`**, and **`pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored'`** in **`ios/Podfile`**; `pod install` succeeds.
 - [ ] iOS: JSON files in **Copy Bundle Resources**.
 - [ ] iOS: ATS exceptions for the four domains (or MID-approved set).
 - [ ] `justpay.json` **`package`** matches Android **`applicationId`**.
@@ -436,9 +433,10 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| iOS: `import LPTrustedSDK` / link errors | Verify `LPTrustedSDK` pod source in Podfile/spec repo, run **`pod install --repo-update`**, then open **`Runner.xcworkspace`**. |
+| iOS: **`Framework 'LPTrustedSDK' not found`** | Add **`LPTrustedSDK_Vendored`** path pod + **`ios/LPTrustedSDK.xcframework`**; remove duplicate manual Runner embed if it cycles with CocoaPods. |
+| iOS: `import LPTrustedSDK` / link errors | Verify **`LPTrustedSDK_Vendored`** in Podfile and **`Podfile.lock`**, run **`pod install --repo-update`**. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
-| iOS: empty **`getDeviceId`** | `LPTrustedSDK` pod not resolved or SDK not initialized; verify `Podfile.lock` contains `LPTrustedSDK`, then clean + reinstall pods. |
+| iOS: empty **`getDeviceId`** | Verify **`LPTrustedSDK_Vendored`** resolves on device (not stub compile path). |
 | Dart: `success: false` with config message | JSON keys missing/wrong; read **`message`** string. |
 | Debug logs (recommended) | Android: view **logcat** and filter by tag **`LankapayJustpay`**. iOS: view the **Xcode console** for lines starting with **`[LankapayJustpay]`**. Dart: debug console output (only in debug mode). |
 | Debug mocks (optional) | In debug builds you can enable failure simulation as success. This can help you continue UI/backend registration flow without native success. Enable with `LankapayJustpayFlutter(enableDebugMocks: true)`. Backend may still reject dummy `signature` or `mobileReference` if it validates strictly. |

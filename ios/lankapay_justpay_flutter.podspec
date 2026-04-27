@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'lankapay_justpay_flutter'
-  s.version          = '0.2.9'
+  s.version          = '0.2.10'
   s.summary          = 'Flutter bridge for LankaPay LPTrusted (JustPay) native SDK.'
   s.description      = <<-DESC
 Wraps the LPTrusted native SDK behind a MethodChannel (`justpay_sdk/methods`) with
@@ -23,7 +23,7 @@ the integrator; see README.
     'DEFINES_MODULE' => 'YES',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386'
   }
-  s.dependency 'LPTrustedSDK'
+  s.dependency 'LPTrustedSDK_Vendored'
 
   s.swift_version = '5.0'
 end

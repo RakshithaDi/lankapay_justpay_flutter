@@ -1,3 +1,6 @@
+# Optional alternative if you publish a spec-repo pod named LPTrustedSDK.
+# For Flutter + lankapay_justpay_flutter, prefer LPTrustedSDK_Vendored (see doc/LPTrustedSDK_Vendored/).
+
 Pod::Spec.new do |s|
   s.name             = 'LPTrustedSDK'
   s.version          = '1.0.0'

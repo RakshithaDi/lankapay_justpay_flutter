@@ -1,3 +1,9 @@
+## 0.2.10
+
+* iOS: depend on **`LPTrustedSDK_Vendored`** (local pod) instead of a bare `LPTrustedSDK` name, so CocoaPods links/embeds the xcframework for the **plugin pod** as well as Runner (fixes **Framework LPTrustedSDK not found** when only Runner linked the xcframework manually).
+* iOS docs: add **`doc/LPTrustedSDK_Vendored/`** template and explain avoiding manual Runner **Embed Frameworks** cycles with **[CP] Embed Pods Frameworks**.
+* Example `ios/Podfile`: document the `LPTrustedSDK_Vendored` path pod line.
+
 ## 0.2.9
 
 * iOS: fix Swift compile error in `JustPaySdkHandler.deviceId()` by safely unwrapping optional return from `LPTrustedSDKManager.getDeviceId()`.

@@ -192,8 +192,8 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
 
 #else
 
-/// Stub used when `LPTrustedSDK.xcframework` is not linked (e.g. local analysis). Integrators must
-/// add the framework so `canImport(LPTrustedSDK)` succeeds and the real handler is compiled.
+/// Stub used when `LPTrustedSDK` is not linked (e.g. local analysis). Integrators must add
+/// `LPTrustedSDK_Vendored` + `LPTrustedSDK.xcframework` per README so `canImport(LPTrustedSDK)` succeeds.
 final class JustPaySdkHandler: NSObject {
   private func debugLog(_ message: String) {
     #if DEBUG
@@ -216,8 +216,8 @@ final class JustPaySdkHandler: NSObject {
     let payload: [String: Any] = [
       "success": false,
       "message":
-        "LPTrustedSDK is not linked. Add LPTrustedSDK.xcframework to your iOS app per the plugin README "
-        + "(Embed & Sign, framework search paths).",
+        "LPTrustedSDK is not linked. Add ios/LPTrustedSDK_Vendored/ (pod) + ios/LPTrustedSDK.xcframework "
+        + "and pod 'LPTrustedSDK_Vendored', :path => 'LPTrustedSDK_Vendored' per the plugin README.",
       "signature": "",
       "mobileReference": ""
     ]
