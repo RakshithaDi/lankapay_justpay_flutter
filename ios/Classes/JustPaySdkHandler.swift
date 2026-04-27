@@ -202,6 +202,10 @@ final class JustPaySdkHandler: NSObject {
   }
 
   func deviceId() -> String {
+    debugLog(
+      "getDeviceId stub: LPTrustedSDK not linked at compile time (#if canImport false). "
+        + "Add LPTrustedSDK_Vendored pod + xcframework per README."
+    )
     return ""
   }
 
