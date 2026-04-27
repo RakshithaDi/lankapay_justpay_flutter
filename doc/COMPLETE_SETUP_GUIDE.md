@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.7   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.9   # or path: / git: for your team
 ```
 
 Then:

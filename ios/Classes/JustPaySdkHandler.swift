@@ -34,7 +34,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   }
 
   func deviceId() -> String {
-    let id = manager.getDeviceId()
+    let id = manager.getDeviceId() ?? ""
     debugLog("getDeviceId called present=\(!id.isEmpty) len=\(id.count)")
     return id
   }

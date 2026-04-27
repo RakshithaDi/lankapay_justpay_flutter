@@ -1,3 +1,7 @@
+## 0.2.9
+
+* iOS: fix Swift compile error in `JustPaySdkHandler.deviceId()` by safely unwrapping optional return from `LPTrustedSDKManager.getDeviceId()`.
+
 ## 0.2.8
 
 * iOS: remove framework search/linker flag hacks and depend on `LPTrustedSDK` pod directly from plugin podspec.
