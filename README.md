@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.13   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.14   # or path: / git: for your team
 ```
 
 Then:
@@ -252,7 +252,7 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
 Follow your **MID Section 7** (LankaPay): copy **`LPTrustedSDK.xcframework`** into the project folder, in Xcode use **Add Files to “…”** on the project, select the xcframework, **Create groups**, enable the **Runner** target, then **Runner → General → Frameworks, Libraries, and Embedded Content** and set **`LPTrustedSDK.xcframework`** to **Embed & Sign**. Add **`justpay.json`** the same way (**Add Files…**), with **Runner** target membership. **`mnv.json`** is optional on iOS; add it only if your bank supplies it and you want the plugin to validate **`dialog`** / **`hutch`** / **`mobitel`** before calling the SDK.
 
-**Flutter caveat:** `lankapay_justpay_flutter` is a **separate CocoaPods target**. The plugin pod links **`LPTrustedSDK`** using **`FRAMEWORK_SEARCH_PATHS`** on **`ios/`** and **`ios/Runner/`**. After you wire the framework in Xcode, ensure the **on-disk** xcframework lives at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`** (sibling to **`Podfile`** / under **`Runner`**). If Xcode only references a path outside **`ios/`**, copy or symlink the xcframework into one of those locations, then run **`cd ios && pod install`**.
+**Flutter caveat:** `lankapay_justpay_flutter` is a **separate CocoaPods target**. The plugin pod links **`LPTrustedSDK`** with **`FRAMEWORK_SEARCH_PATHS`** that include **`ios/`**, **`ios/Runner/`**, and common **xcframework slice** folders (**`ios-arm64`**, **`ios-arm64_x86_64-simulator`**, **`ios-arm64-simulator`**) under both **`LPTrustedSDK.xcframework`** locations — the linker needs **`-F`** on the slice that contains **`LPTrustedSDK.framework`**, not only the **`.xcframework`** root. From **0.2.14** this is built into the podspec; upgrade before adding a custom **`Podfile`** `post_install`. After you wire the framework in Xcode, keep the **on-disk** xcframework at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`**, then **`cd ios && pod install`**. If your bank’s xcframework uses **other slice directory names**, you can still append those paths in **`post_install`** for the **`lankapay_justpay_flutter`** target (same pattern as slice-specific **`FRAMEWORK_SEARCH_PATHS`**).
 
 **Optional — `LPTrustedSDK_Vendored`:** If **`Framework 'LPTrustedSDK' not found`** still hits the **plugin** target, or you get an **embed / thin-binary cycle** between manual Runner embed and CocoaPods, use the tiny path pod in **`doc/LPTrustedSDK_Vendored/`** — see **`doc/LPTrustedSDK_Vendored/README.txt`**. `doc/LPTrustedSDK.podspec.example` is a separate template if you publish a spec-repo pod named **`LPTrustedSDK`** instead.
 
@@ -449,8 +449,8 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| iOS: **`Framework 'LPTrustedSDK' not found`** | Ensure xcframework on disk at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`**; **`pod install`**. Optional **`LPTrustedSDK_Vendored`** path pod; avoid duplicate Runner embed if it cycles with **`[CP] Embed Pods Frameworks`**. |
-| iOS: `import LPTrustedSDK` / link errors | Same path + **`pod install --repo-update`**; open **`Runner.xcworkspace`**. Optional vendored pod if the plugin target still does not resolve **`LPTrustedSDK`**. |
+| iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** on disk; **`pod install`**. Use plugin **≥ 0.2.14** (slice **`FRAMEWORK_SEARCH_PATHS`**). Optional **`LPTrustedSDK_Vendored`**; avoid duplicate Runner embed cycles. |
+| iOS: `import LPTrustedSDK` / link errors | Same + **`pod install --repo-update`**; **`Runner.xcworkspace`**. If your xcframework uses unusual slice folder names, append them in **`post_install`** for **`lankapay_justpay_flutter`**. Optional vendored pod. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
 | iOS: empty **`getDeviceId`** | Often **stub** (framework not linked: **`#if canImport(LPTrustedSDK)`** false) — fix xcframework disk path + **`pod install`**. On a linked device build, empty can mean SDK not initialized per MID. |
 | Dart: `success: false` with config message | JSON keys missing/wrong; read **`message`** string. |

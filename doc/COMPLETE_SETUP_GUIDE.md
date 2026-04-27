@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.13   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.14   # or path: / git: for your team
 ```
 
 Then:
@@ -252,7 +252,7 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
 Follow your **MID Section 7**: **Add Files…** for **`LPTrustedSDK.xcframework`** and **`justpay.json`**, **Runner** target, **Create groups**; **Runner → General → Frameworks, Libraries, and Embedded Content** → **`LPTrustedSDK.xcframework`** → **Embed & Sign**. **`mnv.json`** is optional on iOS.
 
-**Flutter:** The plugin pod searches **`ios/`** and **`ios/Runner/`** for the xcframework. Keep **`LPTrustedSDK.xcframework`** on disk at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`**, then **`pod install`**.
+**Flutter:** The plugin pod (**≥ 0.2.14**) adds **`FRAMEWORK_SEARCH_PATHS`** for **`ios/`**, **`ios/Runner/`**, and common **xcframework slice** folders under **`LPTrustedSDK.xcframework`** (device + simulator), because **`ld`** must see the slice that contains **`LPTrustedSDK.framework`**. Keep the xcframework on disk at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`**, then **`pod install`**. Non-standard slice names may need a **`Podfile`** `post_install`.
 
 **Optional — `LPTrustedSDK_Vendored`:** If the plugin target still cannot find **`LPTrustedSDK`**, or embed phases cycle, use **`doc/LPTrustedSDK_Vendored/README.txt`**. **`doc/LPTrustedSDK.podspec.example`** is for a published **`LPTrustedSDK`** pod if your org uses that instead.
 

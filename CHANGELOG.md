@@ -1,3 +1,7 @@
+## 0.2.14
+
+* iOS: extend **`FRAMEWORK_SEARCH_PATHS`** with common **`LPTrustedSDK.xcframework`** slice directories (**`ios-arm64`**, **`ios-arm64_x86_64-simulator`**, **`ios-arm64-simulator`**) under both **`ios/`** and **`ios/Runner/`**, so **`lankapay_justpay_flutter`** links **`LPTrustedSDK`** without a host **`Podfile`** `post_install` (the linker needs **`-F`** on each slice that contains **`LPTrustedSDK.framework`**, not only the xcframework root).
+
 ## 0.2.13
 
 * iOS: **`mnv.json`** is no longer required in the app bundle. If present, **`dialog`**, **`hutch`**, and **`mobitel`** are still validated before calling the SDK; if absent, the plugin proceeds with **`justpay.json`** only. Android unchanged (**`mnv.json`** still required in **`res/raw`**).

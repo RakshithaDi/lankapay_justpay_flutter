@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'lankapay_justpay_flutter'
-  s.version          = '0.2.13'
+  s.version          = '0.2.14'
   s.summary          = 'Flutter bridge for LankaPay LPTrusted (JustPay) native SDK.'
   s.description      = <<-DESC
 Wraps the LPTrusted native SDK behind a MethodChannel (`justpay_sdk/methods`) with
@@ -19,11 +19,23 @@ the integrator; see README.
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
 
-  # MID-style: add LPTrustedSDK.xcframework in Xcode (Runner → Embed & Sign). For Flutter, the
-  # plugin pod must also link LPTrusted — search ios/ and ios/Runner/ for the xcframework on disk.
+  # MID-style: LPTrustedSDK.xcframework under ios/ or ios/Runner/ (Runner → Embed & Sign).
+  # -framework LPTrustedSDK requires -F on each xcframework *slice* (…/ios-arm64, …/simulator);
+  # the .xcframework root alone does not satisfy the linker for the plugin pod target.
+  fsp_slices = [
+    '$(inherited)',
+    '"${PODS_ROOT}/.."',
+    '"${PODS_ROOT}/../Runner"',
+    '"${PODS_ROOT}/../LPTrustedSDK.xcframework/ios-arm64"',
+    '"${PODS_ROOT}/../LPTrustedSDK.xcframework/ios-arm64_x86_64-simulator"',
+    '"${PODS_ROOT}/../LPTrustedSDK.xcframework/ios-arm64-simulator"',
+    '"${PODS_ROOT}/../Runner/LPTrustedSDK.xcframework/ios-arm64"',
+    '"${PODS_ROOT}/../Runner/LPTrustedSDK.xcframework/ios-arm64_x86_64-simulator"',
+    '"${PODS_ROOT}/../Runner/LPTrustedSDK.xcframework/ios-arm64-simulator"'
+  ].join(' ')
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
-    'FRAMEWORK_SEARCH_PATHS' => '$(inherited) "${PODS_ROOT}/.." "${PODS_ROOT}/../Runner"',
+    'FRAMEWORK_SEARCH_PATHS' => fsp_slices,
     'OTHER_LDFLAGS' => '$(inherited) -framework LPTrustedSDK',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386'
   }
