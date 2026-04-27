@@ -7,8 +7,9 @@ export 'src/justpay_sdk_result.dart';
 
 /// Flutter bridge to the LankaPay LPTrusted (JustPay) native SDK.
 ///
-/// The host app must supply [justpay.json] and [mnv.json], link the LPTrusted
-/// binaries, and complete MID host configuration. This class only forwards calls
+/// The host app must supply [justpay.json], link the LPTrusted binaries, and
+/// complete MID host configuration. [mnv.json] is required on Android; on iOS it
+/// is optional if your integration does not bundle it. This class only forwards calls
 /// over the method channel `justpay_sdk/methods`.
 class LankapayJustpayFlutter {
   LankapayJustpayFlutter({

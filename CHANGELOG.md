@@ -1,6 +1,10 @@
+## 0.2.13
+
+* iOS: **`mnv.json`** is no longer required in the app bundle. If present, **`dialog`**, **`hutch`**, and **`mobitel`** are still validated before calling the SDK; if absent, the plugin proceeds with **`justpay.json`** only. Android unchanged (**`mnv.json`** still required in **`res/raw`**).
+
 ## 0.2.12
 
-* iOS: default integration again matches **MID manual Xcode** flow (add `LPTrustedSDK.xcframework` + **Embed & Sign** on Runner, add `justpay.json` / `mnv.json` to the app target). Plugin pod restores **`FRAMEWORK_SEARCH_PATHS`** on **`ios/`** and **`ios/Runner/`** plus **`-framework LPTrustedSDK`** so the **plugin** target links without a separate `LPTrustedSDK_Vendored` CocoaPod.
+* iOS: default integration again matches **MID manual Xcode** flow (add `LPTrustedSDK.xcframework` + **Embed & Sign** on Runner, add `justpay.json` to the app target). Plugin pod restores **`FRAMEWORK_SEARCH_PATHS`** on **`ios/`** and **`ios/Runner/`** plus **`-framework LPTrustedSDK`** so the **plugin** target links without a separate `LPTrustedSDK_Vendored` CocoaPod.
 * iOS docs: **`LPTrustedSDK_Vendored`** is documented only as an **optional** fallback if you hit **Framework not found** / **embed cycle** issues with CocoaPods.
 
 ## 0.2.11

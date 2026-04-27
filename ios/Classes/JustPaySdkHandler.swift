@@ -50,9 +50,8 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
     self.completion = completion
     do {
       let justPayConfig = try loadJson(named: "justpay")
-      let mnvConfig = try loadJson(named: "mnv")
 
-      debugLog("validating required json keys for justpay.json and mnv.json")
+      debugLog("validating required json keys for justpay.json")
       try require(justPayConfig, "url")
       try require(justPayConfig, "package")
       try require(justPayConfig, "justpay_code")
@@ -60,9 +59,15 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       try require(justPayConfig, "key_signer")
       try require(justPayConfig, "justpay_cert")
       try require(justPayConfig, "issuer")
-      try require(mnvConfig, "dialog")
-      try require(mnvConfig, "hutch")
-      try require(mnvConfig, "mobitel")
+
+      if let mnvConfig = try loadJsonIfPresent(named: "mnv") {
+        debugLog("mnv.json present; validating dialog, hutch, mobitel")
+        try require(mnvConfig, "dialog")
+        try require(mnvConfig, "hutch")
+        try require(mnvConfig, "mobitel")
+      } else {
+        debugLog("mnv.json not in bundle; skipping validation (not required on iOS)")
+      }
 
       justPayCode = try require(justPayConfig, "justpay_code")
       signature = ""
@@ -166,6 +171,25 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
         code: -1,
         userInfo: [NSLocalizedDescriptionKey: "\(name).json not found in app bundle"]
       )
+    }
+    let data = try Data(contentsOf: url)
+    debugLog("\(name).json read bytes=\(data.count)")
+    let object = try JSONSerialization.jsonObject(with: data, options: [])
+    guard let json = object as? [String: Any] else {
+      debugLog("\(name).json is not a valid JSON object")
+      throw NSError(
+        domain: "JustPay",
+        code: -2,
+        userInfo: [NSLocalizedDescriptionKey: "\(name).json is not a valid JSON object"]
+      )
+    }
+    return json
+  }
+
+  /// Returns `nil` if the file is absent (iOS does not require `mnv.json` in the app bundle).
+  private func loadJsonIfPresent(named name: String) throws -> [String: Any]? {
+    guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+      return nil
     }
     let data = try Data(contentsOf: url)
     debugLog("\(name).json read bytes=\(data.count)")

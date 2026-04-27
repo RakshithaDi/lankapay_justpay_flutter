@@ -44,7 +44,7 @@ Obtain from your **bank / LankaPay onboarding** (not from this open-source repo)
 | Asset | Android | iOS |
 |--------|---------|-----|
 | `justpay.json` | Place in `res/raw` | Add to Runner bundle |
-| `mnv.json` | Place in `res/raw` | Add to Runner bundle |
+| `mnv.json` | Place in `res/raw` | Optional on iOS (omit if your MID does not supply it) |
 | Native SDK | `LPTrustedSDK.aar` | `LPTrustedSDK.xcframework` |
 
 
@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.12   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.13   # or path: / git: for your team
 ```
 
 Then:
@@ -250,7 +250,7 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
 ## 10. iOS — LPTrustedSDK and JSON (MID manual Xcode; Flutter disk path)
 
-Follow your **MID Section 7** (LankaPay): copy **`LPTrustedSDK.xcframework`** into the project folder, in Xcode use **Add Files to “…”** on the project, select the xcframework, **Create groups**, enable the **Runner** target, then **Runner → General → Frameworks, Libraries, and Embedded Content** and set **`LPTrustedSDK.xcframework`** to **Embed & Sign**. Add **`justpay.json`** (and your **`mnv.json`**) the same way (**Add Files…**), with **Runner** target membership so they ship in the app bundle.
+Follow your **MID Section 7** (LankaPay): copy **`LPTrustedSDK.xcframework`** into the project folder, in Xcode use **Add Files to “…”** on the project, select the xcframework, **Create groups**, enable the **Runner** target, then **Runner → General → Frameworks, Libraries, and Embedded Content** and set **`LPTrustedSDK.xcframework`** to **Embed & Sign**. Add **`justpay.json`** the same way (**Add Files…**), with **Runner** target membership. **`mnv.json`** is optional on iOS; add it only if your bank supplies it and you want the plugin to validate **`dialog`** / **`hutch`** / **`mobitel`** before calling the SDK.
 
 **Flutter caveat:** `lankapay_justpay_flutter` is a **separate CocoaPods target**. The plugin pod links **`LPTrustedSDK`** using **`FRAMEWORK_SEARCH_PATHS`** on **`ios/`** and **`ios/Runner/`**. After you wire the framework in Xcode, ensure the **on-disk** xcframework lives at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`** (sibling to **`Podfile`** / under **`Runner`**). If Xcode only references a path outside **`ios/`**, copy or symlink the xcframework into one of those locations, then run **`cd ios && pod install`**.
 
@@ -282,11 +282,10 @@ Follow your **MID Section 7** (LankaPay): copy **`LPTrustedSDK.xcframework`** in
 
 ## 12. iOS — Bundle JSON
 
-1. In Xcode, select **`justpay.json`** and **`mnv.json`**.
-2. In the **File inspector**, under **Target Membership**, enable **Runner**.
-3. Confirm both appear under **Build Phases → Copy Bundle Resources**.
+1. In Xcode, add **`justpay.json`** (**Add Files…**), enable **Runner** target membership, and confirm it under **Build Phases → Copy Bundle Resources**.
+2. **`mnv.json`** is **optional** on iOS. If you include it, use the same steps; the plugin validates **`dialog`**, **`hutch`**, and **`mobitel`** when the file is present.
 
-Filenames on disk should be **`justpay.json`** and **`mnv.json`** so `Bundle.main.url(forResource:withExtension:)` finds them.
+Use the literal filenames **`justpay.json`** and (if applicable) **`mnv.json`** so `Bundle.main.url(forResource:withExtension:)` finds them.
 
 ---
 
@@ -346,7 +345,7 @@ In Xcode: **Runner target → Build Settings → search “Bitcode” → Enable
 
 1. Run **`pod install --repo-update`** and open **`Runner.xcworkspace`**.
 2. On disk: **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`** exists.
-3. In Xcode (**Runner**): **General → Frameworks, Libraries, and Embedded Content** shows **`LPTrustedSDK.xcframework`** with **Embed & Sign**; **`justpay.json`** / **`mnv.json`** have **Runner** target membership and appear under **Build Phases → Copy Bundle Resources**.
+3. In Xcode (**Runner**): **General → Frameworks, Libraries, and Embedded Content** shows **`LPTrustedSDK.xcframework`** with **Embed & Sign**; **`justpay.json`** has **Runner** target membership (and **Copy Bundle Resources**). **`mnv.json`** only if you bundle it.
 
 If **`Framework 'LPTrustedSDK' not found`** remains, confirm the xcframework path above, then try the optional **`LPTrustedSDK_Vendored`** path pod (**`doc/LPTrustedSDK_Vendored/README.txt`**).
 
@@ -397,13 +396,17 @@ These are validated **before** the SDK runs (mirroring typical native LPTrusted 
 
 ### `mnv.json`
 
+**Android:** required in **`res/raw`**; keys below must be present and non-empty.
+
+**iOS:** file is **optional**. If **`mnv.json`** is in the app bundle, the same keys are validated; if the file is absent, the plugin skips this check.
+
 | Key |
 |-----|
 | `dialog` |
 | `hutch` |
 | `mobitel` |
 
-If any are missing, you get a structured error **`message`** in the Dart result (Android) or the same shape from iOS.
+If required keys are missing (or **`mnv.json`** is missing on Android), you get a structured error **`message`** in the Dart result.
 
 ---
 
@@ -416,8 +419,8 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] Android: **`LPTrustedSDK.aar`** exists at **`android/app/libs/LPTrustedSDK.aar`**.
 - [ ] Android: **`justpay.json`** / **`mnv.json`** exist under **`res/raw/`** with correct names.
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
-- [ ] iOS: **`LPTrustedSDK.xcframework`** on disk under **`ios/`** or **`ios/Runner/`**; **Runner** → **Embed & Sign**; **`justpay.json`** / **`mnv.json`** in bundle; **`pod install`** succeeds (optional **`LPTrustedSDK_Vendored`** only if you need the fallback).
-- [ ] iOS: JSON files in **Copy Bundle Resources**.
+- [ ] iOS: **`LPTrustedSDK.xcframework`** on disk under **`ios/`** or **`ios/Runner/`**; **Runner** → **Embed & Sign**; **`justpay.json`** in bundle; **`pod install`** succeeds (optional **`mnv.json`**, optional **`LPTrustedSDK_Vendored`**).
+- [ ] iOS: **`justpay.json`** in **Copy Bundle Resources** (and **`mnv.json`** only if you use it).
 - [ ] iOS: ATS exceptions for the four domains (or MID-approved set).
 - [ ] `justpay.json` **`package`** matches Android **`applicationId`**.
 - [ ] **`getDeviceId`** returns a **non-empty** string when the SDK is correctly linked (empty often means iOS framework not linked or stub path).
