@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.6   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.7   # or path: / git: for your team
 ```
 
 Then:
@@ -254,16 +254,15 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
    ```
    ios/
-     JustPaySDK/
-       LPTrustedSDK.xcframework   ← entire xcframework bundle here
+     LPTrustedSDK.xcframework   ← entire xcframework bundle here
      Podfile
      Runner/
      ...
    ```
 
-2. Copy the bank’s **`LPTrustedSDK.xcframework`** into **`ios/JustPaySDK/`** so the path is:
+2. Copy the bank’s **`LPTrustedSDK.xcframework`** into **`ios/`** so the path is:
 
-   **`ios/JustPaySDK/LPTrustedSDK.xcframework`**
+   **`ios/LPTrustedSDK.xcframework`**
 
 ---
 
@@ -425,7 +424,7 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] Android: **`LPTrustedSDK.aar`** exists at **`android/app/libs/LPTrustedSDK.aar`**.
 - [ ] Android: **`justpay.json`** / **`mnv.json`** exist under **`res/raw/`** with correct names.
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
-- [ ] iOS: **`LPTrustedSDK.xcframework`** under **`ios/JustPaySDK/`** and embedded per MID.
+- [ ] iOS: **`LPTrustedSDK.xcframework`** under **`ios/`** and embedded per MID.
 - [ ] iOS: JSON files in **Copy Bundle Resources**.
 - [ ] iOS: ATS exceptions for the four domains (or MID-approved set).
 - [ ] `justpay.json` **`package`** matches Android **`applicationId`**.
@@ -455,9 +454,9 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| iOS: `import LPTrustedSDK` / link errors | **`ios/JustPaySDK/LPTrustedSDK.xcframework`**, **`pod install`**, Embed & Sign. |
+| iOS: `import LPTrustedSDK` / link errors | **`ios/LPTrustedSDK.xcframework`**, **`pod install`**, Embed & Sign. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
-| iOS: empty **`getDeviceId`** | Framework not linked (stub path) or SDK not initialized; recheck Embed & Sign, **`JustPaySDK`** path, and **`pod install`**. |
+| iOS: empty **`getDeviceId`** | Framework not linked (stub path) or SDK not initialized; recheck Embed & Sign, **`ios/LPTrustedSDK.xcframework`** path, and **`pod install`**. |
 | Dart: `success: false` with config message | JSON keys missing/wrong; read **`message`** string. |
 | Debug logs (recommended) | Android: view **logcat** and filter by tag **`LankapayJustpay`**. iOS: view the **Xcode console** for lines starting with **`[LankapayJustpay]`**. Dart: debug console output (only in debug mode). |
 | Debug mocks (optional) | In debug builds you can enable failure simulation as success. This can help you continue UI/backend registration flow without native success. Enable with `LankapayJustpayFlutter(enableDebugMocks: true)`. Backend may still reject dummy `signature` or `mobileReference` if it validates strictly. |

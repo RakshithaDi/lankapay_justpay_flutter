@@ -1,5 +1,6 @@
-Place LPTrustedSDK.xcframework in this directory (from your bank / LankaPay kit):
+Updated path:
 
-  JustPaySDK/LPTrustedSDK.xcframework
+  ios/LPTrustedSDK.xcframework
 
-The plugin pod resolves LPTrusted via FRAMEWORK_SEARCH_PATHS (see root README).
+Do not place the framework under JustPaySDK anymore.
+The plugin pod resolves LPTrusted from ios/ (see root README).

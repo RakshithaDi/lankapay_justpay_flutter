@@ -1,3 +1,8 @@
+## 0.2.7
+
+* iOS: change LPTrusted framework placement to `ios/LPTrustedSDK.xcframework` (remove `JustPaySDK` subfolder requirement).
+* Docs: update root and example setup guides to reflect the new iOS framework path.
+
 ## 0.2.6
 
 * Android docs/example: add workaround for LPTrusted AAR duplicate-class conflicts by excluding `commons-io` and `slf4j-api` in host app Gradle.
