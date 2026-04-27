@@ -1,0 +1,12 @@
+Pod::Spec.new do |s|
+  s.name             = 'LPTrustedSDK'
+  s.version          = '1.0.0'
+  s.summary          = 'LPTrusted iOS SDK'
+  s.description      = 'LPTrusted iOS SDK'
+  s.homepage         = 'https://your-url'
+  s.license          = { :type => 'Commercial', :text => 'Proprietary' }
+  s.author           = { 'LankaPay' => 'support@your-domain.com' }
+  s.platform         = :ios, '13.0'
+  s.source           = { :git => 'https://your-repo.git', :tag => s.version.to_s }
+  s.vendored_frameworks = 'LPTrustedSDK.xcframework'
+end

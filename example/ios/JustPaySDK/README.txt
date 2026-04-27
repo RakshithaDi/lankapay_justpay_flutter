@@ -1,6 +1,7 @@
-Updated path:
+This folder is deprecated.
 
-  ios/LPTrustedSDK.xcframework
+The plugin now expects LPTrustedSDK as a CocoaPod dependency:
+  pod 'LPTrustedSDK', :path => '.'
 
-Do not place the framework under JustPaySDK anymore.
-The plugin pod resolves LPTrusted from ios/ (see root README).
+Or publish LPTrustedSDK.podspec to your private/public spec repo.
+See doc/LPTrustedSDK.podspec.example and root README.

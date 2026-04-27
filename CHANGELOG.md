@@ -1,3 +1,9 @@
+## 0.2.8
+
+* iOS: remove framework search/linker flag hacks and depend on `LPTrustedSDK` pod directly from plugin podspec.
+* iOS docs: switch integration flow from manual xcframework placement to CocoaPods-based `LPTrustedSDK` sourcing.
+* Added `doc/LPTrustedSDK.podspec.example` template for private/public pod distribution.
+
 ## 0.2.7
 
 * iOS: change LPTrusted framework placement to `ios/LPTrustedSDK.xcframework` (remove `JustPaySDK` subfolder requirement).
