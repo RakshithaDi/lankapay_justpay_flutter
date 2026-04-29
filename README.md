@@ -210,17 +210,21 @@ On **`<application>`**, point to your XML config (see next section). Example:
 
 ## 8. Android — Network security (cleartext / MNV)
 
-Mobile network validation (MNV) often uses **HTTP** to specific operator endpoints. Android 9+ blocks cleartext unless you allow it per domain.
+Mobile network validation (MNV) often uses **HTTP** to specific operator endpoints. Android 9+ blocks cleartext unless you allow it per domain. Without the right hosts, you may see **`UnknownServiceException: CLEARTEXT communication … not permitted`**.
+
+UAT/sandbox MNV configs often hit **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobitel.lk`** in addition to production-style **`mobileauth.ideabiz.lk`** and **`gsmacnv.mobitel.lk`**. Include every host your **`mnv.json`** / MID uses.
 
 1. Create **`android/app/src/main/res/xml/network_security_config.xml`**.
 
-2. Example content (replace domains with those from **your** MID if they differ):
+2. Example content (merge with **your** MID; add or remove domains per environment):
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">3lauth.ideabiz.lk</domain>
         <domain includeSubdomains="true">mobileauth.ideabiz.lk</domain>
+        <domain includeSubdomains="true">gsmacnvep.mobitel.lk</domain>
         <domain includeSubdomains="true">gsmacnv.mobitel.lk</domain>
         <domain includeSubdomains="true">apihub.hutch.lk</domain>
         <domain includeSubdomains="true">heapihub.hutch.lk</domain>
@@ -230,7 +234,7 @@ Mobile network validation (MNV) often uses **HTTP** to specific operator endpoin
 
 3. Ensure **`AndroidManifest.xml`** references it (see [section 7](#7-android--permissions-androidmanifestxml)).
 
-**Important:** If your bank’s MID lists **different** hosts for sandbox/production, replace these domains accordingly. The block above is an **example**, not a substitute for your MID.
+**Important:** If your bank’s MID lists **different** hosts for sandbox/production, adjust this list. The block above is a **working reference** for common LankaPay MNV hosts, not a substitute for verifying your MID.
 
 ---
 
@@ -291,14 +295,24 @@ Use the literal filenames **`justpay.json`** and (if applicable) **`mnv.json`** 
 
 ## 13. iOS — App Transport Security (ATS)
 
-iOS blocks insecure HTTP unless you declare exceptions. Add **`NSAppTransportSecurity`** for the **same operator hosts** you allow in Android cleartext (example below; align with your MID):
+iOS blocks insecure HTTP unless you declare exceptions. Add **`NSAppTransportSecurity`** for the **same operator hosts** you allow in Android cleartext ([section 8](#8-android--network-security-cleartext--mnv)). Use the same domain set as your **`network_security_config.xml`** (UAT often needs **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobitel.lk`**).
 
 ```xml
 <key>NSAppTransportSecurity</key>
 <dict>
     <key>NSExceptionDomains</key>
     <dict>
+        <key>3lauth.ideabiz.lk</key>
+        <dict>
+            <key>NSExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+        </dict>
         <key>mobileauth.ideabiz.lk</key>
+        <dict>
+            <key>NSExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+        </dict>
+        <key>gsmacnvep.mobitel.lk</key>
         <dict>
             <key>NSExceptionAllowsInsecureHTTPLoads</key>
             <true/>
@@ -421,7 +435,7 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
 - [ ] iOS: **`LPTrustedSDK.xcframework`** on disk under **`ios/`** or **`ios/Runner/`**; **Runner** → **Embed & Sign**; **`justpay.json`** in bundle; **`pod install`** succeeds (optional **`mnv.json`**, optional **`LPTrustedSDK_Vendored`**).
 - [ ] iOS: **`justpay.json`** in **Copy Bundle Resources** (and **`mnv.json`** only if you use it).
-- [ ] iOS: ATS exceptions for the four domains (or MID-approved set).
+- [ ] iOS: ATS **`NSExceptionDomains`** for every MNV HTTP host you use (mirror Android §8; confirm with MID).
 - [ ] `justpay.json` **`package`** matches Android **`applicationId`**.
 - [ ] **`getDeviceId`** returns a **non-empty** string when the SDK is correctly linked (empty often means iOS framework not linked or stub path).
 - [ ] **`createIdentityAndSign`** completes with **`success: true`** in a full test onboarding (uses bank sandbox as directed).

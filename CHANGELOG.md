@@ -1,3 +1,7 @@
+## 0.2.15
+
+* Docs: Android **`network_security_config.xml`** and iOS **`NSAppTransportSecurity`** examples include UAT-style MNV hosts **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobitel.lk`** alongside **`mobileauth.ideabiz.lk`**, **`gsmacnv.mobitel.lk`**, and Hutch hosts (**`README.md`**, **`doc/COMPLETE_SETUP_GUIDE.md`**, **`example/README.md`**).
+
 ## 0.2.14
 
 * iOS: extend **`FRAMEWORK_SEARCH_PATHS`** with common **`LPTrustedSDK.xcframework`** slice directories (**`ios-arm64`**, **`ios-arm64_x86_64-simulator`**, **`ios-arm64-simulator`**) under both **`ios/`** and **`ios/Runner/`**, so **`lankapay_justpay_flutter`** links **`LPTrustedSDK`** without a host **`Podfile`** `post_install` (the linker needs **`-F`** on each slice that contains **`LPTrustedSDK.framework`**, not only the xcframework root).
