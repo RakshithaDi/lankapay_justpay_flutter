@@ -242,8 +242,6 @@ Per **MID Section 7**: **Add Files…** for **`LPTrustedSDK.xcframework`** and *
 
 Keep the xcframework on disk at **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/LPTrustedSDK.xcframework`** so the **plugin** CocoaPods target can link it, then **`pod install`**.
 
-**Optional:** **`LPTrustedSDK_Vendored`** path pod — **`doc/LPTrustedSDK_Vendored/README.txt`** — if you hit **Framework not found** or embed cycles.
-
 ---
 
 ## 11. iOS — CocoaPods
@@ -413,7 +411,7 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] Android: **`LPTrustedSDK.aar`** exists at **`android/app/libs/LPTrustedSDK.aar`**.
 - [ ] Android: **`justpay.json`** / **`mnv.json`** exist under **`res/raw/`** with correct names.
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
-- [ ] iOS: **`LPTrustedSDK.xcframework`** under **`ios/`** or **`ios/Runner/`**; **Embed & Sign**; **`justpay.json`** in bundle; **`pod install`** (optional **`mnv.json`**, optional **`LPTrustedSDK_Vendored`**).
+- [ ] iOS: **`LPTrustedSDK.xcframework`** under **`ios/`** or **`ios/Runner/`**; **Embed & Sign**; **`justpay.json`** in bundle; **`pod install`** (optional **`mnv.json`**).
 - [ ] iOS: **`justpay.json`** in **Copy Bundle Resources** (and **`mnv.json`** only if used).
 - [ ] iOS: ATS **`NSExceptionDomains`** for every MNV HTTP host you use (mirror Android §8; confirm with MID).
 - [ ] `justpay.json` **`package`** matches Android **`applicationId`**.
@@ -442,7 +440,7 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** + **`pod install`**. Optional **`LPTrustedSDK_Vendored`**. |
+| iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** + **`pod install --repo-update`**; open **`Runner.xcworkspace`**. |
 | iOS: `import LPTrustedSDK` / link errors | Same; **`Runner.xcworkspace`**. Optional vendored pod. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
 | iOS: empty **`getDeviceId`** | Often stub — xcframework path + **`pod install`**; else MID init. |

@@ -1,3 +1,8 @@
+## 0.2.16
+
+* Docs: remove **`LPTrustedSDK_Vendored`** fallback guidance from setup/troubleshooting and keep iOS integration path focused on direct **`LPTrustedSDK.xcframework`** + CocoaPods flow.
+* Docs: update iOS wording to treat **`mnv.json`** as required in bundle/setup/checklists for this integration guide.
+
 ## 0.2.15
 
 * Docs: Android **`network_security_config.xml`** and iOS **`NSAppTransportSecurity`** examples include UAT-style MNV hosts **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobitel.lk`** alongside **`mobileauth.ideabiz.lk`**, **`gsmacnv.mobitel.lk`**, and Hutch hosts (**`README.md`**, **`doc/COMPLETE_SETUP_GUIDE.md`**, **`example/README.md`**).
