@@ -121,4 +121,67 @@ class LankapayJustpayFlutter {
     }
     return result;
   }
+
+  /// Creates identity when needed, then signs [contentToSign] without mobile validation.
+  ///
+  /// Use this when your flow needs only the SDK signature payload and you will
+  /// handle mobile validation in a different step/channel.
+  Future<JustPaySdkResult> createIdentityAndSignOnly({
+    required String challenge,
+    required String contentToSign,
+  }) async {
+    if (_debugEnabled) {
+      debugPrint(
+        '[LankapayJustpayFlutter] createIdentityAndSignOnly called challengeLen=${challenge.length} contentToSignLen=${contentToSign.length}',
+      );
+    }
+    Map<String, dynamic>? map;
+    try {
+      map = await _channel.invokeMapMethod<String, dynamic>(
+        'createIdentityAndSignOnly',
+        {
+          'challenge': challenge,
+          'contentToSign': contentToSign,
+        },
+      );
+    } catch (e) {
+      if (_debugEnabled) {
+        debugPrint('[LankapayJustpayFlutter] createIdentityAndSignOnly failed with exception: $e');
+      }
+      rethrow;
+    }
+
+    if (map == null) {
+      if (_debugEnabled) {
+        debugPrint('[LankapayJustpayFlutter] createIdentityAndSignOnly returned null map');
+      }
+      if (_debugMocksEnabled) {
+        if (_debugEnabled) {
+          debugPrint('[LankapayJustpayFlutter] Debug mocks: simulating success from null map');
+        }
+        return _simulatedSuccessResult();
+      }
+      return const JustPaySdkResult(
+        success: false,
+        message: 'Empty SDK response',
+      );
+    }
+
+    final result = JustPaySdkResult.fromMap(map);
+    if (!result.success && _debugMocksEnabled) {
+      if (_debugEnabled) {
+        debugPrint(
+          '[LankapayJustpayFlutter] Debug mocks: native returned success=false, simulating success',
+        );
+      }
+      return _simulatedSuccessResult();
+    }
+    if (_debugEnabled) {
+      final sig = result.signature;
+      debugPrint(
+        '[LankapayJustpayFlutter] createIdentityAndSignOnly result success=${result.success} messageLen=${result.message?.length ?? 0} signaturePresent=${sig != null && sig.isNotEmpty} signatureLen=${sig?.length ?? 0}',
+      );
+    }
+    return result;
+  }
 }

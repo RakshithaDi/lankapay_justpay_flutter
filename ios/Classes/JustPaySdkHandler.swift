@@ -17,6 +17,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   private var justPayCode: String = ""
   private var signature: String = ""
   private var contentToSign: String = ""
+  private var shouldValidateMobile: Bool = true
 
   private func debugLog(_ message: String) {
     #if DEBUG
@@ -48,6 +49,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       "createIdentityAndSign called challengeLen=\(challenge.count) contentToSignLen=\(contentToSign.count)"
     )
     self.completion = completion
+    shouldValidateMobile = true
     do {
       let justPayConfig = try loadJson(named: "justpay")
 
@@ -92,6 +94,57 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
     }
   }
 
+  func createIdentityAndSignOnly(
+    challenge: String,
+    contentToSign: String,
+    completion: @escaping ([String: Any]) -> Void
+  ) {
+    debugLog(
+      "createIdentityAndSignOnly called challengeLen=\(challenge.count) contentToSignLen=\(contentToSign.count)"
+    )
+    self.completion = completion
+    shouldValidateMobile = false
+    do {
+      let justPayConfig = try loadJson(named: "justpay")
+      if let mnvConfig = try loadJsonIfPresent(named: "mnv") {
+        debugLog("mnv.json present; validating dialog, hutch, mobitel")
+        try require(mnvConfig, "dialog")
+        try require(mnvConfig, "hutch")
+        try require(mnvConfig, "mobitel")
+      }
+
+      debugLog("validating required json keys for justpay.json")
+      try require(justPayConfig, "url")
+      try require(justPayConfig, "package")
+      try require(justPayConfig, "justpay_code")
+      try require(justPayConfig, "key_encipher")
+      try require(justPayConfig, "key_signer")
+      try require(justPayConfig, "justpay_cert")
+      try require(justPayConfig, "issuer")
+
+      justPayCode = try require(justPayConfig, "justpay_code")
+      signature = ""
+      self.contentToSign = contentToSign
+
+      if manager.isIdentityExist(justPayCode) {
+        debugLog("identityExists=true -> stage=signing (signingOnly)")
+        stage = .signing
+        manager.signMessage(justPayCode, message: self.contentToSign)
+      } else {
+        debugLog("identityExists=false -> stage=creatingIdentity (signingOnly)")
+        stage = .creatingIdentity
+        manager.createIdentity(justPayCode, challenge: challenge)
+      }
+    } catch {
+      finish(
+        success: false,
+        message: "JustPay config/init error: \(error.localizedDescription)",
+        signature: "",
+        mobileReference: ""
+      )
+    }
+  }
+
   func onIdentitySuccess() {
     guard stage == .creatingIdentity else { return }
     debugLog("onIdentitySuccess -> stage=signing")
@@ -112,10 +165,20 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   func onMessageSignSuccess(_ signedMessage: String, status: String) {
     guard stage == .signing else { return }
     let signaturePresent = !signedMessage.isEmpty
-    debugLog(
-      "onMessageSignSuccess -> stage=validatingMobile signaturePresent=\(signaturePresent) signatureLen=\(signedMessage.count)"
-    )
+    if shouldValidateMobile {
+      debugLog(
+        "onMessageSignSuccess -> stage=validatingMobile signaturePresent=\(signaturePresent) signatureLen=\(signedMessage.count)"
+      )
+    } else {
+      debugLog(
+        "onMessageSignSuccess -> finishing(signingOnly) signaturePresent=\(signaturePresent) signatureLen=\(signedMessage.count)"
+      )
+    }
     signature = signedMessage
+    if !shouldValidateMobile {
+      finish(success: true, message: "OK", signature: signature, mobileReference: "")
+      return
+    }
     stage = .validatingMobile
     manager.validateMobile(justPayCode)
   }

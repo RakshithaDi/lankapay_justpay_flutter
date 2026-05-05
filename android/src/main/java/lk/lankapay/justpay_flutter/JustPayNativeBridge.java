@@ -46,6 +46,10 @@ public final class JustPayNativeBridge {
                 debugLog("createIdentityAndSign called");
                 handleCreateIdentityAndSign(call, result);
                 break;
+            case "createIdentityAndSignOnly":
+                debugLog("createIdentityAndSignOnly called");
+                handleCreateIdentityAndSignOnly(call, result);
+                break;
             default:
                 result.notImplemented();
                 break;
@@ -91,6 +95,47 @@ public final class JustPayNativeBridge {
         invalidResponse.put("signature", "");
         invalidResponse.put("mobileReference", "");
         return invalidResponse;
+    }
+
+    private static HashMap<String, Object> signingOnlySuccessResponse(String signature) {
+        HashMap<String, Object> ok = new HashMap<>();
+        ok.put("success", true);
+        ok.put("message", "OK");
+        ok.put("signature", signature == null ? "" : signature);
+        ok.put("mobileReference", "");
+        return ok;
+    }
+
+    private void handleCreateIdentityAndSignOnly(MethodCall call, MethodChannel.Result result) {
+        String challenge = call.argument("challenge");
+        String contentToSign = call.argument("contentToSign");
+        boolean challengeOk = challenge != null && !challenge.trim().isEmpty();
+        boolean contentOk = contentToSign != null && !contentToSign.trim().isEmpty();
+        if (challenge == null || challenge.trim().isEmpty()
+                || contentToSign == null || contentToSign.trim().isEmpty()) {
+            if (!challengeOk) {
+                debugLog("Invalid payload: challenge is empty");
+            }
+            if (!contentOk) {
+                debugLog("Invalid payload: contentToSign is empty");
+            }
+            result.success(invalidPayloadResponse());
+            return;
+        }
+        try {
+            debugLog("Validating config files (justpay.json and mnv.json) from host res/raw");
+            ensureConfigFilesAvailable();
+            debugLog("Config validation passed");
+            startIdentityAndSignOnly(challenge, contentToSign, result, 0);
+        } catch (Exception e) {
+            HashMap<String, Object> configError = new HashMap<>();
+            configError.put("success", false);
+            configError.put("message", "JustPay config error: " + e.getMessage());
+            configError.put("signature", "");
+            configError.put("mobileReference", "");
+            debugLog("Config/init exception: " + e.getMessage());
+            result.success(configError);
+        }
     }
 
     private void startIdentitySignAndValidate(
@@ -164,6 +209,68 @@ public final class JustPayNativeBridge {
                         sendErrorResult(result, "Mobile validation failed (" + errorCode + "): " + errorMessage);
                     }
                 });
+            }
+
+            @Override
+            public void onFailed(int errorCode, String errorMessage) {
+                debugLog("signMessage failed errorCode=" + errorCode + " message=" + errorMessage);
+                sendErrorResult(result, "Message signing failed (" + errorCode + "): " + errorMessage);
+            }
+        });
+    }
+
+    private void startIdentityAndSignOnly(
+            String challenge,
+            String contentToSign,
+            MethodChannel.Result result,
+            int retryCount
+    ) {
+        try {
+            boolean identityExists = lpTrustedSDKManager.isIdentityExist();
+            debugLog("LPTrusted identityExists=" + identityExists + " retryCount=" + retryCount + " signingOnly=true");
+            if (identityExists) {
+                debugLog("Stage=signingOnly (identity exists)");
+                signOnly(contentToSign, result);
+                return;
+            }
+
+            debugLog("Stage=creatingIdentity signingOnly=true");
+            lpTrustedSDKManager.createIdentity(challenge, new CreateIdentityCallback() {
+                @Override
+                public void onSuccess() {
+                    debugLog("Identity creation success -> Stage=signingOnly");
+                    signOnly(contentToSign, result);
+                }
+
+                @Override
+                public void onFailed(int errorCode, String errorMessage) {
+                    if ((errorCode == 300 || errorCode == 301 || errorCode == 302
+                            || errorCode == 303 || errorCode == 305) && retryCount < 2) {
+                        debugLog("Identity creation failed (retryable) errorCode=" + errorCode + " -> clearIdentity and retry");
+                        lpTrustedSDKManager.clearIdentity();
+                        startIdentityAndSignOnly(challenge, contentToSign, result, retryCount + 1);
+                        return;
+                    }
+                    debugLog("Identity creation failed errorCode=" + errorCode + " message=" + errorMessage);
+                    sendErrorResult(result, "Identity creation failed (" + errorCode + "): " + errorMessage);
+                }
+            });
+        } catch (Exception e) {
+            debugLog("Identity flow exception: " + e.getMessage());
+            sendErrorResult(result, "Identity flow failed: " + e.getMessage());
+        }
+    }
+
+    private void signOnly(String contentToSign, MethodChannel.Result result) {
+        debugLog("Stage=signingOnly (signMessage called)");
+        lpTrustedSDKManager.signMessage(contentToSign, new SignMessageCallback() {
+            @Override
+            public void onSuccess(String signMessage, String status) {
+                boolean signaturePresent = signMessage != null && !signMessage.isEmpty();
+                debugLog("signMessage success (signingOnly) signaturePresent=" + signaturePresent
+                        + " signatureLen=" + (signaturePresent ? signMessage.length() : 0)
+                        + " status=" + status);
+                result.success(signingOnlySuccessResponse(signMessage));
             }
 
             @Override

@@ -20,6 +20,13 @@ void main() {
             'signature': 'sig',
             'mobileReference': 'mref',
           };
+        case 'createIdentityAndSignOnly':
+          return {
+            'success': true,
+            'message': 'OK',
+            'signature': 'sig-only',
+            'mobileReference': '',
+          };
         default:
           return null;
       }
@@ -45,6 +52,17 @@ void main() {
     expect(r.success, true);
     expect(r.signature, 'sig');
     expect(r.mobileReference, 'mref');
+  });
+
+  test('createIdentityAndSignOnly maps standalone signing response', () async {
+    final plugin = LankapayJustpayFlutter();
+    final r = await plugin.createIdentityAndSignOnly(
+      challenge: 'c',
+      contentToSign: 'body',
+    );
+    expect(r.success, true);
+    expect(r.signature, 'sig-only');
+    expect(r.mobileReference, '');
   });
 
   test('debug mocks: simulate success when native returns success=false',

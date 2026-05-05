@@ -1,3 +1,9 @@
+## 0.2.17
+
+* Add standalone Flutter API **`createIdentityAndSignOnly`** to return signature without running mobile validation.
+* Android/iOS bridge updates to support sign-only flow while preserving existing **`createIdentityAndSign`** behavior.
+* Docs: add sign-only usage snippet in **`README.md`** and publish SDK method reference in **`doc/LPTRUSTEDSDK_MANAGER_METHODS.md`**.
+
 ## 0.2.16
 
 * Docs: remove **`LPTrustedSDK_Vendored`** fallback guidance from setup/troubleshooting and keep iOS integration path focused on direct **`LPTrustedSDK.xcframework`** + CocoaPods flow.

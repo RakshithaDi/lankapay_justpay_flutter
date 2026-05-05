@@ -39,6 +39,28 @@ public class LankapayJustpayFlutterPlugin: NSObject, FlutterPlugin {
       ) { payload in
         result(payload)
       }
+    case "createIdentityAndSignOnly":
+      guard
+        let args = call.arguments as? [String: Any],
+        let challenge = args["challenge"] as? String,
+        let contentToSign = args["contentToSign"] as? String,
+        !challenge.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        !contentToSign.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      else {
+        result([
+          "success": false,
+          "message": "Invalid JustPay request payload",
+          "signature": "",
+          "mobileReference": ""
+        ])
+        return
+      }
+      handler.createIdentityAndSignOnly(
+        challenge: challenge,
+        contentToSign: contentToSign
+      ) { payload in
+        result(payload)
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

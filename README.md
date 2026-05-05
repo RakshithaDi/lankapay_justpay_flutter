@@ -386,6 +386,20 @@ if (result.success) {
 }
 ```
 
+If your flow needs signature only (without MNV/mobile validation), use:
+
+```dart
+final signOnly = await justPay.createIdentityAndSignOnly(
+  challenge: challengeFromApi,
+  contentToSign: termsPlainText,
+);
+
+if (signOnly.success) {
+  final signature = signOnly.signature;
+  // mobileReference is empty in sign-only mode.
+}
+```
+
 **Threading:** Native callbacks complete on the platform main thread; the plugin returns a `Future` to Dart as usual.
 
 ---
