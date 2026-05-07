@@ -16,9 +16,14 @@ class LankapayJustpayFlutter {
     MethodChannel? channel,
     bool enableDebugLogs = kDebugMode,
     bool enableDebugMocks = false,
+    /// When true, native code clears the stored JustPay identity before each
+    /// [createIdentityAndSign] / [createIdentityAndSignOnly] so [createIdentity]
+    /// runs every time (verify `mobileReference` / flow in any build mode).
+    bool recreateIdentityEachCall = false,
   })  : _channel = channel ?? const MethodChannel(_kChannelName),
         _enableDebugLogs = enableDebugLogs,
-        _enableDebugMocks = enableDebugMocks;
+        _enableDebugMocks = enableDebugMocks,
+        _recreateIdentityEachCall = recreateIdentityEachCall;
 
   static const String _kChannelName = 'justpay_sdk/methods';
 
@@ -36,6 +41,7 @@ class LankapayJustpayFlutter {
   final MethodChannel _channel;
   final bool _enableDebugLogs;
   final bool _enableDebugMocks;
+  final bool _recreateIdentityEachCall;
 
   bool get _debugEnabled => _enableDebugLogs && kDebugMode;
   bool get _debugMocksEnabled => _enableDebugMocks && kDebugMode;
@@ -78,6 +84,7 @@ class LankapayJustpayFlutter {
         {
           'challenge': challenge,
           'contentToSign': contentToSign,
+          'recreateIdentityEachCall': _recreateIdentityEachCall,
         },
       );
     } catch (e) {
@@ -142,6 +149,7 @@ class LankapayJustpayFlutter {
         {
           'challenge': challenge,
           'contentToSign': contentToSign,
+          'recreateIdentityEachCall': _recreateIdentityEachCall,
         },
       );
     } catch (e) {

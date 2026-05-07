@@ -33,9 +33,11 @@ public class LankapayJustpayFlutterPlugin: NSObject, FlutterPlugin {
         ])
         return
       }
+      let recreateIdentityEachCall = (args["recreateIdentityEachCall"] as? Bool) == true
       handler.createIdentityAndSign(
         challenge: challenge,
-        contentToSign: contentToSign
+        contentToSign: contentToSign,
+        recreateIdentityEachCall: recreateIdentityEachCall
       ) { payload in
         result(payload)
       }
@@ -55,9 +57,11 @@ public class LankapayJustpayFlutterPlugin: NSObject, FlutterPlugin {
         ])
         return
       }
+      let recreateIdentityEachCall = (args["recreateIdentityEachCall"] as? Bool) == true
       handler.createIdentityAndSignOnly(
         challenge: challenge,
-        contentToSign: contentToSign
+        contentToSign: contentToSign,
+        recreateIdentityEachCall: recreateIdentityEachCall
       ) { payload in
         result(payload)
       }

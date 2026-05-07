@@ -76,6 +76,10 @@ public final class JustPayNativeBridge {
             debugLog("Validating config files (justpay.json and mnv.json) from host res/raw");
             ensureConfigFilesAvailable();
             debugLog("Config validation passed");
+            if (Boolean.TRUE.equals(call.argument("recreateIdentityEachCall"))) {
+                debugLog("recreateIdentityEachCall=true -> clearIdentity()");
+                lpTrustedSDKManager.clearIdentity();
+            }
             startIdentitySignAndValidate(challenge, contentToSign, result, 0);
         } catch (Exception e) {
             HashMap<String, Object> configError = new HashMap<>();
@@ -126,6 +130,10 @@ public final class JustPayNativeBridge {
             debugLog("Validating config files (justpay.json and mnv.json) from host res/raw");
             ensureConfigFilesAvailable();
             debugLog("Config validation passed");
+            if (Boolean.TRUE.equals(call.argument("recreateIdentityEachCall"))) {
+                debugLog("recreateIdentityEachCall=true -> clearIdentity()");
+                lpTrustedSDKManager.clearIdentity();
+            }
             startIdentityAndSignOnly(challenge, contentToSign, result, 0);
         } catch (Exception e) {
             HashMap<String, Object> configError = new HashMap<>();

@@ -43,6 +43,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   func createIdentityAndSign(
     challenge: String,
     contentToSign: String,
+    recreateIdentityEachCall: Bool = false,
     completion: @escaping ([String: Any]) -> Void
   ) {
     debugLog(
@@ -75,6 +76,11 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       signature = ""
       self.contentToSign = contentToSign
 
+      if recreateIdentityEachCall {
+        debugLog("recreateIdentityEachCall=true -> clearIdentity(justPayCode)")
+        _ = manager.clearIdentity(justPayCode)
+      }
+
       if manager.isIdentityExist(justPayCode) {
         debugLog("identityExists=true -> stage=signing")
         stage = .signing
@@ -97,6 +103,7 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
   func createIdentityAndSignOnly(
     challenge: String,
     contentToSign: String,
+    recreateIdentityEachCall: Bool = false,
     completion: @escaping ([String: Any]) -> Void
   ) {
     debugLog(
@@ -125,6 +132,11 @@ final class JustPaySdkHandler: NSObject, LPTrustedSDKDelegate {
       justPayCode = try require(justPayConfig, "justpay_code")
       signature = ""
       self.contentToSign = contentToSign
+
+      if recreateIdentityEachCall {
+        debugLog("recreateIdentityEachCall=true -> clearIdentity(justPayCode) (signingOnly)")
+        _ = manager.clearIdentity(justPayCode)
+      }
 
       if manager.isIdentityExist(justPayCode) {
         debugLog("identityExists=true -> stage=signing (signingOnly)")

@@ -1,3 +1,7 @@
+## 0.2.18
+
+* Add optional **`recreateIdentityEachCall`** on **`LankapayJustpayFlutter`**: when true, Android/iOS clear stored JustPay identity before each **`createIdentityAndSign`** / **`createIdentityAndSignOnly`** so **`createIdentity`** runs every call (for integration testing or comparing **`mobileReference`** behavior). Defaults to false.
+
 ## 0.2.17
 
 * Add standalone Flutter API **`createIdentityAndSignOnly`** to return signature without running mobile validation.
