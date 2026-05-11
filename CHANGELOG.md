@@ -1,3 +1,9 @@
+## 0.2.20
+
+* Android: **`getDeviceId`** — validate **`justpay.json` / `mnv.json`** via the same **`ensureConfigFilesAvailable()`** path as signing (surfaces missing **`res/raw`** early); **`Log.i` / `Log.e`** when empty so **release logcat** shows failures (not only **`BuildConfig.DEBUG`**).
+* Android: document **`shrinkResources`** — host apps with **`isShrinkResources = true`** may strip **`res/raw/*.json`** loaded via **`getIdentifier`**, causing empty device id in release; add **`res/xml`** **`tools:keep="@raw/justpay,@raw/mnv"`** (see **§9**).
+* **`consumer-rules.pro`** comment block for shrink vs R8.
+
 ## 0.2.19
 
 * Android: expand **`consumer-rules.pro`** so R8 keeps **SpongyCastle** (`org.spongycastle.**`), Apache Commons / **json-simple**, the **Flutter bridge** package, and minimal **OkHttp** rules — not only **`com.lankapay.justpay.**`. Missing SpongyCastle keeps commonly causes **`getDeviceId`** to return **`""` in release** while debug works; iOS is unaffected.
