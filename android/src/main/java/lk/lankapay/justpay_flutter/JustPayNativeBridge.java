@@ -49,8 +49,7 @@ public final class JustPayNativeBridge {
                             TAG,
                             "getDeviceId: raw JSON missing or invalid (check res/raw + shrinkResources keep.xml): "
                                     + e.getMessage(),
-                            e,
-                    );
+                            e);
                     result.success("");
                     break;
                 }
@@ -59,8 +58,7 @@ public final class JustPayNativeBridge {
                     Log.e(
                             TAG,
                             "getDeviceId: LPTrusted returned empty "
-                                    + "(verify LPTrustedSDK.aar, R8/consumer-rules, and justpay.json package vs applicationId)",
-                    );
+                                    + "(verify LPTrustedSDK.aar, R8/consumer-rules, and justpay.json package vs applicationId)");
                 } else {
                     Log.i(TAG, "getDeviceId ok length=" + deviceId.length());
                 }

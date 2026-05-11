@@ -1,3 +1,7 @@
+## 0.2.21
+
+* Android: fix **Java 8** compile failure in **`JustPayNativeBridge`** (remove trailing commas in **`Log.e(...)`** argument lists; Java 8 does not allow them, so **release** **`javac`** failed with “illegal start of expression”).
+
 ## 0.2.20
 
 * Android: **`getDeviceId`** — validate **`justpay.json` / `mnv.json`** via the same **`ensureConfigFilesAvailable()`** path as signing (surfaces missing **`res/raw`** early); **`Log.i` / `Log.e`** when empty so **release logcat** shows failures (not only **`BuildConfig.DEBUG`**).
