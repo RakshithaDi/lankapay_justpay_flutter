@@ -39,30 +39,8 @@ public final class JustPayNativeBridge {
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         switch (call.method) {
             case "getDeviceId":
-                // Use Log.i/Log.e regardless of BuildConfig.DEBUG so release/logcat shows failures.
-                Log.i(TAG, "getDeviceId called");
-                try {
-                    // Same JSON LPTrusted needs internally; fails fast if shrinkResources stripped res/raw.
-                    ensureConfigFilesAvailable();
-                } catch (Exception e) {
-                    Log.e(
-                            TAG,
-                            "getDeviceId: raw JSON missing or invalid (check res/raw + shrinkResources keep.xml): "
-                                    + e.getMessage(),
-                            e);
-                    result.success("");
-                    break;
-                }
-                final String deviceId = lpTrustedSDKManager.getDeviceID();
-                if (deviceId == null || deviceId.isEmpty()) {
-                    Log.e(
-                            TAG,
-                            "getDeviceId: LPTrusted returned empty "
-                                    + "(verify LPTrustedSDK.aar, R8/consumer-rules, and justpay.json package vs applicationId)");
-                } else {
-                    Log.i(TAG, "getDeviceId ok length=" + deviceId.length());
-                }
-                result.success(deviceId == null ? "" : deviceId);
+                debugLog("getDeviceId called");
+                result.success(lpTrustedSDKManager.getDeviceID());
                 break;
             case "createIdentityAndSign":
                 debugLog("createIdentityAndSign called");

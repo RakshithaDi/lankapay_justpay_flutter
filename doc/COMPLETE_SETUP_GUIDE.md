@@ -240,33 +240,15 @@ UAT/sandbox MNV configs often hit **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobit
 
 ## 9. Android — ProGuard / R8 (release)
 
-1. This plugin publishes **`android/consumer-rules.pro`**, which Gradle merges into your app when **`minifyEnabled`** is true. It keeps:
+1. This plugin publishes **`consumer-rules.pro`** with:
 
-   - **`com.lankapay.justpay.**`** (LPTrusted),
-   - **`org.spongycastle.**`** (SpongyCastle jars inside the AAR — **not** the same as BouncyCastle `org.bouncycastle`),
-   - **`org.apache.commons.*`** / **`org.json.simple.**`** as used by the stack,
-   - **`lk.lankapay.justpay_flutter.**`** (MethodChannel bridge),
-   - minimal **OkHttp** rules.
-
-2. **Resource shrinking (`shrinkResources`)** — **not** fixed by ProGuard:
-
-   If your app sets **`isShrinkResources = true`** (common with release minify), the build may **remove** **`res/raw/justpay.json`** and **`res/raw/mnv.json`** because they are opened via **`Context#getIdentifier("justpay", "raw", …)`** — the shrinker often **does not** treat that as a reference. LPTrusted then cannot read config → **`getDeviceId()` returns `""`** in **release only** (debug does not shrink). **iOS is unaffected.**
-
-   Add **`app/src/main/res/xml/keep_justpay_raw_resources.xml`** (name optional):
-
-   ```xml
-   <?xml version="1.0" encoding="utf-8"?>
-   <resources xmlns:tools="http://schemas.android.com/tools"
-       tools:keep="@raw/justpay,@raw/mnv" />
+   ```pro
+   -keep class com.lankapay.justpay.** { *; }
    ```
 
-   Or temporarily set **`isShrinkResources = false`** to confirm.
+2. If LankaPay or your bank supplies **additional** ProGuard rules, merge them into your app’s **`proguard-rules.pro`** (or the rules file your release build uses).
 
-3. If **`getDeviceId`** is **non-empty in debug** but **empty in Android release** while **iOS release is fine**, check **(2)** first, then consumer rules / SpongyCastle.
-
-4. If LankaPay or your bank supplies **additional** ProGuard rules, merge them into your app’s **`proguard-rules.pro`** (or the rules file your release build uses).
-
-5. Always run a **release** build on a **real device** and exercise **JustPay onboarding** before store submission.
+3. Always run a **release** build on a **real device** and exercise **JustPay onboarding** before store submission.
 
 ---
 
@@ -479,7 +461,6 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| Android: **`getDeviceId`** empty **only in release** | **R8** stripping **SpongyCastle** / LPTrusted — use plugin **≥ 0.2.19** so **`consumer-rules.pro`** is complete. **Also** check **`shrinkResources`**: raw **`justpay.json` / `mnv.json`** can be stripped — add **`res/xml`** **`tools:keep="@raw/justpay,@raw/mnv"`** (see §9) or set **`isShrinkResources = false`** to test. |
 | iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** + **`pod install --repo-update`**; open **`Runner.xcworkspace`**. |
 | iOS: `import LPTrustedSDK` / link errors | Same + **`pod install --repo-update`**; **`Runner.xcworkspace`**. Optional vendored pod if plugin target still fails. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |

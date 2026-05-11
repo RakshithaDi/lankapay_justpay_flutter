@@ -1,3 +1,9 @@
+## 0.2.22
+
+* Revert Android native changes from **0.2.19–0.2.21**: **`JustPayNativeBridge.java`** and **`consumer-rules.pro`** match the **0.2.18** implementation again (narrow **`consumer-rules`**; no **`getDeviceId`**-specific **`ensureConfigFilesAvailable`** flow). Published **0.2.19–0.2.21** remain on pub.dev for teams that depended on those builds.
+* **README:** retains **classpath / `ClassLoader.getResourceAsStream`** host Gradle guidance (**§5**, **§6**, **§9**, troubleshooting) alongside accurate **ProGuard** wording for this release.
+* **doc/COMPLETE_SETUP_GUIDE.md:** aligned with **0.2.18** plugin behavior (see **README** for classpath mirror and release **`getDeviceId`** notes).
+
 ## 0.2.21
 
 * Android: fix **Java 8** compile failure in **`JustPayNativeBridge`** (remove trailing commas in **`Log.e(...)`** argument lists; Java 8 does not allow them, so **release** **`javac`** failed with “illegal start of expression”).
