@@ -1,3 +1,8 @@
+## 0.2.19
+
+* Android: expand **`consumer-rules.pro`** so R8 keeps **SpongyCastle** (`org.spongycastle.**`), Apache Commons / **json-simple**, the **Flutter bridge** package, and minimal **OkHttp** rules — not only **`com.lankapay.justpay.**`. Missing SpongyCastle keeps commonly causes **`getDeviceId`** to return **`""` in release** while debug works; iOS is unaffected.
+* Docs: ProGuard section and troubleshooting row for release-only empty device id.
+
 ## 0.2.18
 
 * Add optional **`recreateIdentityEachCall`** on **`LankapayJustpayFlutter`**: when true, Android/iOS clear stored JustPay identity before each **`createIdentityAndSign`** / **`createIdentityAndSignOnly`** so **`createIdentity`** runs every call (for integration testing or comparing **`mobileReference`** behavior). Defaults to false.

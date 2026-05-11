@@ -156,6 +156,8 @@ configurations.all {
 }
 ```
 
+**Trade-off (read this if you use `file_picker` 11+ or other Apache Tika stacks):** Excluding external `commons-io` avoids **duplicate class** errors with a fat **`LPTrustedSDK.aar`** that already embeds `org.apache.commons.io.*`. Some dependencies (for example **`file_picker` ≥ 11** on Android, which pulls **`tika-core`**) expect a **full Maven `commons-io` 2.x`** on the classpath. With the exclude, **release R8** can fail with **missing** `org.apache.commons.io.*` classes. In that case you cannot satisfy both AAR and Tika from Gradle alone: **ask the bank / LankaPay for an `LPTrustedSDK` build that does not bundle `commons-io`** (or uses a **relocated** / shaded package), **or** avoid the conflicting stack (for example pin **`file_picker`** to a version **without** `tika-core`, if acceptable for your app). There is no Dart-only fix inside this plugin.
+
 **`applicationId` / flavors:** The value of **`package`** inside `justpay.json` must match the **built app’s** `applicationId` (including flavor suffixes such as `.dev`). If they differ, identity and signing will fail.
 
 ---
@@ -240,11 +242,15 @@ UAT/sandbox MNV configs often hit **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobit
 
 ## 9. Android — ProGuard / R8 (release)
 
-1. This plugin publishes **`consumer-rules.pro`** with:
+1. This plugin publishes **`android/consumer-rules.pro`**, which Gradle merges into your app when **`minifyEnabled`** is true. It keeps:
 
-   ```pro
-   -keep class com.lankapay.justpay.** { *; }
-   ```
+   - **`com.lankapay.justpay.**`** (LPTrusted),
+   - **`org.spongycastle.**`** (SpongyCastle jars inside the AAR — **not** the same as BouncyCastle `org.bouncycastle`),
+   - **`org.apache.commons.*`** / **`org.json.simple.**`** as used by the stack,
+   - **`lk.lankapay.justpay_flutter.**`** (MethodChannel bridge),
+   - minimal **OkHttp** rules.
+
+   If **`getDeviceId`** is **non-empty in debug** but **empty in Android release** while **iOS release is fine**, outdated or missing consumer rules (especially **SpongyCastle**) or an app ProGuard file that overrides merges is the first place to check.
 
 2. If LankaPay or your bank supplies **additional** ProGuard rules, merge them into your app’s **`proguard-rules.pro`** (or the rules file your release build uses).
 
@@ -472,9 +478,12 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 |--------|----------------|
 | Gradle: AAR not found | Path **`android/app/libs/LPTrustedSDK.aar`** and spelling of filename. |
 | Gradle: duplicate classes (`org.apache.commons.io.*` / `org.slf4j.*`) | LPTrustedSDK AAR may already include `commons-io` and `slf4j-api`. Exclude external duplicates in app Gradle using `configurations.configureEach { exclude(...) }` (Kotlin DSL) or `configurations.all { exclude ... }` (Groovy), then run `flutter clean`. |
+| Release R8: missing `org.apache.commons.io.*` after excluding `commons-io` | Same trade-off as above: Tika / full `commons-io` vs fat AAR. Prefer an updated **LPTrustedSDK** from the vendor, or remove/downgrade the dependency that pulls **Tika** (often **`file_picker` ≥ 11**). |
+| Gradle: duplicate classes **return** when you remove the `commons-io` exclude | Expected: Maven **`commons-io`** and the AAR’s embedded copy both define `org.apache.commons.io.*`. You need a **non-fat** AAR or avoid pulling a second `commons-io`. |
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
+| Android: **`getDeviceId`** empty **only in release** | **R8** stripping **SpongyCastle** / LPTrusted — use plugin **≥ 0.2.19** so **`consumer-rules.pro`** is complete; ensure app **`proguard-rules.pro`** does not discard library consumer rules. Temporarily set **`isMinifyEnabled = false`** to confirm shrinking is the cause. |
 | iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** on disk; **`pod install --repo-update`**; open **`Runner.xcworkspace`**. Use plugin **≥ 0.2.14** (slice **`FRAMEWORK_SEARCH_PATHS`**). |
 | iOS: `import LPTrustedSDK` / link errors | Same + **`pod install --repo-update`**; **`Runner.xcworkspace`**. If your xcframework uses unusual slice folder names, append them in **`post_install`** for **`lankapay_justpay_flutter`**. Optional vendored pod. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |

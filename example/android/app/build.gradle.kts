@@ -46,6 +46,8 @@ flutter {
 configurations.configureEach {
     // Some LPTrustedSDK AAR builds already embed commons-io and slf4j-api.
     // Exclude external copies to avoid Duplicate class build errors.
+    // If a host app adds Apache Tika (e.g. file_picker 11+), release R8 may need
+    // a full commons-io — see plugin README trade-off; example stays MID-minimal.
     exclude(group = "commons-io", module = "commons-io")
     exclude(group = "org.slf4j", module = "slf4j-api")
 }
