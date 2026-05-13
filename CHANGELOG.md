@@ -1,3 +1,8 @@
+## 0.2.23
+
+* Android: LPTrusted `ConfigManager` loads `justpay.json` / `mnv.json` via `ClassLoader.getResourceAsStream("res/raw/…")`, which does not reliably resolve Android `res/raw` in release. The plugin wraps the application context with **`LpTrustedApplicationContext`** + **`LpTrustedHostClassLoader`** so those paths read via **`Resources.openRawResource`**, aligning debug and release **without** duplicating JSON as Java classpath resources (which caused duplicate APK `res/raw/*` entries).
+* **README.md:** §5–§6, §9, §18, §20 updated — **≥ 0.2.23** in-plugin routing; Gradle classpath mirror marked **legacy** (duplicate APK entry risk).
+
 ## 0.2.22
 
 * Revert Android native changes from **0.2.19–0.2.21**: **`JustPayNativeBridge.java`** and **`consumer-rules.pro`** match the **0.2.18** implementation again (narrow **`consumer-rules`**; no **`getDeviceId`**-specific **`ensureConfigFilesAvailable`** flow). Published **0.2.19–0.2.21** remain on pub.dev for teams that depended on those builds.

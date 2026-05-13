@@ -32,8 +32,12 @@ public final class JustPayNativeBridge {
     private final LPTrustedSDKManager lpTrustedSDKManager;
 
     public JustPayNativeBridge(@NonNull Context applicationContext) {
-        this.appContext = applicationContext.getApplicationContext();
-        this.lpTrustedSDKManager = LPTrustedSDKManager.getInstance(this.appContext);
+        Context realApp = applicationContext.getApplicationContext();
+        this.appContext = realApp;
+        // LPTrusted ConfigManager reads JSON via context.getClassLoader().getResourceAsStream("res/raw/…").
+        // Route those paths through Resources so debug/release behave the same without duplicate APK entries.
+        Context lpTrustedContext = new LpTrustedApplicationContext(realApp);
+        this.lpTrustedSDKManager = LPTrustedSDKManager.getInstance(lpTrustedContext);
     }
 
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {

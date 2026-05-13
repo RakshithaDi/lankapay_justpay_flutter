@@ -72,7 +72,7 @@ In your app’s **`pubspec.yaml`**:
 dependencies:
   flutter:
     sdk: flutter
-  lankapay_justpay_flutter: ^0.2.22   # or path: / git: for your team
+  lankapay_justpay_flutter: ^0.2.23   # or path: / git: for your team
 ```
 
 Then:
@@ -160,62 +160,32 @@ configurations.all {
 
 **`applicationId` / flavors:** The value of **`package`** inside `justpay.json` must match the **built app’s** `applicationId` (including flavor suffixes such as `.dev`). If they differ, identity and signing will fail.
 
-### Classpath mirror for LPTrusted (`ClassLoader#getResourceAsStream`)
+### LPTrusted `ClassLoader#getResourceAsStream("res/raw/…")` (**handled in-plugin ≥ 0.2.23**)
 
-Some **`LPTrustedSDK`** Android builds load **`justpay.json`** / **`mnv.json`** via the **application class loader**, for example **`context.getClassLoader().getResourceAsStream("res/raw/justpay.json")`** (and the same pattern for **`mnv.json`**). That is **classpath (Java resources)**, not **`Resources.openRawResource`**. Putting files only under **`res/raw`** can satisfy **`openRawResource`** while **`getResourceAsStream("res/raw/…")`** still returns **null** unless those paths also exist as **Java resources** in the APK.
+Some **`LPTrustedSDK`** Android builds load **`justpay.json`** / **`mnv.json`** via **`context.getClassLoader().getResourceAsStream("res/raw/justpay.json")`** (same pattern for **`mnv.json`**). That is a **classpath** lookup. Putting JSON under **`src/main/res/raw`** satisfies **`Resources.openRawResource`**, but **`getResourceAsStream("res/raw/…")`** can still return **null** on **release** APKs — then **`ConfigManager.getStatus`** never fills **`Constants.DEVICE_ID`** and **`getDeviceID()`** is empty.
 
-**Fix:** Copy the two JSON files from **`android/app/src/main/res/raw`** into a generated **`res/raw`** tree under **`build/`** during **`preBuild`**, and add that folder to **`android.sourceSets.main.resources`**. Gradle then packages them so the classpath layout matches what the AAR expects; **`ConfigManager.getStatus`** can complete, **`Constants.DEVICE_ID`** can populate, and **`getDeviceID()`** can return a non-empty id in **release** as well as debug.
+**From plugin version `0.2.23`, Android initializes LPTrusted with a wrapped application context:**
 
-Kotlin DSL (**`android/app/build.gradle.kts`**) — register the task **outside** **`android { }`**, merge **`sourceSets`** **inside** your existing **`android { }`** block:
+| Piece | Role |
+|-------|------|
+| **`LpTrustedApplicationContext`** | **`getClassLoader()`** delegates JSON lookup to **`LpTrustedHostClassLoader`**; **`getApplicationContext()`** returns **`this`** so **`LPTrustedSDKManager.getInstance(…)`** keeps using that loader through native **`init`** (stock **`Application#getApplicationContext()`** would unwrap back to the default **`ClassLoader`**). **`getResources()`**, **`getPackageName()`**, etc. still delegate to your real app. |
+| **`LpTrustedHostClassLoader`** | **`getResourceAsStream("res/raw/justpay.json")`** / **`…/mnv.json`** forwards to **`Resources.openRawResource(getIdentifier(…))`** for the host **`applicationId`**. |
 
-```kotlin
-// LPTrusted may use ClassLoader.getResourceAsStream("res/raw/justpay.json").
-// Mirrors host res/raw JSON into Java resources so that path resolves in the APK.
+**Host Gradle:** You **do not** mirror **`justpay.json` / `mnv.json`** as duplicate Java resources (**no** `Copy` → `sourceSets.main.resources` workaround). Duplicating those paths caused APK packaging failures (**`already contains entry 'res/raw/justpay.json'`**) because **`res/raw`** and Java resources mapped to the same zip entries.
 
-val prepareLpTrustedClasspathResources =
-    tasks.register<Copy>("prepareLpTrustedClasspathResources") {
-        from("$projectDir/src/main/res/raw") {
-            include("justpay.json", "mnv.json")
-        }
-        into(layout.buildDirectory.dir("generated/lptrustedClasspathResources/res/raw"))
-    }
-tasks.named("preBuild").configure { dependsOn(prepareLpTrustedClasspathResources) }
+**Still required elsewhere:** **`implementation(files("libs/LPTrustedSDK.aar"))`**, **`justpay.json` / `mnv.json`** in **`res/raw`**, **`tools:keep="@raw/justpay,@raw/mnv"`** when **`shrinkResources`** is on ([§9](#9-android--proguard--r8-release)), and app **`ProGuard`** rules your MID specifies ([§9](#9-android--proguard--r8-release)).
 
-android {
-    // ...
-    sourceSets {
-        getByName("main") {
-            resources.srcDir(layout.buildDirectory.dir("generated/lptrustedClasspathResources"))
-        }
-    }
-}
-```
+**Initialize LPTrusted on Android through this plugin** (`JustPayNativeBridge`). Calling **`LPTrustedSDKManager.getInstance(realApplication)`** **before** the plugin attaches can initialise the singleton **without** the wrapped **`ClassLoader`**.
 
-Groovy (**`android/app/build.gradle`**) equivalent:
+---
 
-```groovy
-tasks.register("prepareLpTrustedClasspathResources", Copy) {
-    from("$projectDir/src/main/res/raw") {
-        include "justpay.json", "mnv.json"
-    }
-    into("$buildDir/generated/lptrustedClasspathResources/res/raw")
-}
-tasks.named("preBuild").configure { dependsOn("prepareLpTrustedClasspathResources") }
+### Legacy only (**plugins &lt; 0.2.23**)
 
-android {
-    sourceSets {
-        main {
-            resources.srcDir("$buildDir/generated/lptrustedClasspathResources")
-        }
-    }
-}
-```
+Older integrations duplicated classpath JSON via Gradle (**`prepareLpTrustedClasspathResources`** + **`android.sourceSets.main.resources`**). That pattern risks duplicate APK **`res/raw/*`** entries and **`pickFirst`** rules often **do not** fix **incremental** packagers (**`:app:package*Debug`**). **Prefer upgrading to ≥ `0.2.23`.**
 
-**Rebuild** your release variant (**`flutter build apk … --release`**, or your flavor) and verify logs (**`deviceIdLength`** should be **> 0**, not **`-1`**; **`getChallenge`** should see a non-empty **`deviceId`**).
+If you must stay on an older plugin, coordinate classpath mirrors vs shrinking with your bank — duplicate **`res/raw`** packaging remains fragile.
 
-**Flavor note:** The snippets copy from **`src/main/res/raw` only**. If flavor-specific trees hold different JSON (**`src/sit/res/raw/`**, etc.), extend the **`Copy`** task with additional **`from(…)`** blocks (or merged inputs) so the generated classpath **`res/raw`** matches what that flavor exposes through **`Resources`** for **`openRawResource`**.
-
-**Optional message for LankaPay / the bank:** If their Android MID assumes **`res/raw`** alone is enough, the integration guide should clarify when config must also be reachable as **`ClassLoader.getResourceAsStream("res/raw/justpay.json")`** / **`…/mnv.json`** — host apps may need this Gradle wiring in addition to standard **`res/raw`** placement.
+**Optional message for LankaPay / the bank:** Document whether MID relies on **`ClassLoader#getResourceAsStream("res/raw/justpay.json")`** vs **`Resources`** only; client wrappers (**≥ 0.2.23**) bridge classpath lookups to **`res/raw`** without duplicate APK entries.
 
 ---
 
@@ -240,7 +210,7 @@ This Flutter plugin validates JSON using **`Resources.openRawResource`** (same l
 
 Put differently: LankaPay telling you provisioning or SHA has “nothing to configure” reflects **their server side** — this classpath vs **`Resources`** mismatch is **how the client loads config on Android**.
 
-**Remediation:** Implement the **classpath mirror** described in **[section 5](#5-android--gradle-app-module)** (**Classpath mirror for LPTrusted**), then rebuild and re-check **`getDeviceID`** end-to-end.
+**Remediation:** Use **`lankapay_justpay_flutter` ≥ `0.2.23`** so **`LpTrustedApplicationContext` / `LpTrustedHostClassLoader`** route **`ClassLoader`** lookups to **`Resources`** ([§5](#5-android--gradle-app-module)). If you are pinned below **`0.2.23`**, see **Legacy** under §5 (classpath mirror — fragile duplicate APK paths).
 
 ---
 
@@ -319,7 +289,7 @@ UAT/sandbox MNV configs often hit **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobit
 
    Fat **`LPTrustedSDK`** AARs often bundle **SpongyCastle**, Apache **Commons**, **OkHttp**, and similar. If **`getDeviceId`** or signing works in **debug** but fails in **release**, add **`-keep`** rules your **MID / bank** documents to your **app module’s** **`proguard-rules.pro`** (for example **`org.spongycastle.**`**, **`lk.lankapay.justpay_flutter.**`, **`org.json.simple.**`**) — they are **not** all declared in this plugin’s consumer rules for **`0.2.22`**.
 
-2. **`ClassLoader` vs Android resources:** Some LPTrusted AAR builds require **`ClassLoader#getResourceAsStream("res/raw/justpay.json")`** (same for **`mnv.json`**). If **`openRawResource`** / plugin validation succeeds but **`getDeviceId`** stays empty (**`deviceIdLength: -1`**, **`getChallenge`** sees no **`deviceId`**), wire the **classpath mirror** from **[section 5](#5-android--gradle-app-module)** (**Classpath mirror for LPTrusted**) before blaming R8 or shrinking alone.
+2. **`ClassLoader` vs Android resources:** From **`0.2.23`**, the Android bridge routes **`ClassLoader#getResourceAsStream("res/raw/justpay.json")`** / **`mnv.json`** to **`Resources.openRawResource`** ([§5](#5-android--gradle-app-module)) — **no Gradle classpath mirror**. If **`getDeviceId`** stays empty on **`≥ 0.2.23`**, check **(3)** (**shrinkResources** / **`tools:keep`**), **(1)** (**R8** keeps), and that **`LPTrustedSDKManager`** was **not** initialised earlier via **`getInstance(realApplication)`** without the plugin wrapper. Plugins **&lt; `0.2.23`**: see **Legacy** in **[§5](#5-android--gradle-app-module)** (classpath mirror — duplicate APK path risk).
 
 3. **Resource shrinking (`shrinkResources`)** — **not** fixed by **`consumer-rules.pro`**:
 
@@ -335,7 +305,7 @@ UAT/sandbox MNV configs often hit **`3lauth.ideabiz.lk`** and **`gsmacnvep.mobit
 
    Or temporarily set **`isShrinkResources = false`** to confirm.
 
-4. If **`getDeviceId`** is **non-empty in debug** but **empty in Android release** while **iOS release is fine**, check **(2)** (**classpath**) and **(3)** (**shrinkResources**), then **app-level ProGuard/R8 `-keep` rules** as in **(1)**.
+4. If **`getDeviceId`** is **non-empty in debug** but **empty in Android release** while **iOS release is fine**, check **(2)** (**plugin ≥ `0.2.23`** + early **`getInstance`**), **(3)** (**shrinkResources**), then **app-level ProGuard/R8 `-keep` rules** as in **(1)**.
 
 5. If LankaPay or your bank supplies **additional** ProGuard rules, merge them into your app’s **`proguard-rules.pro`** (or the rules file your release build uses).
 
@@ -535,7 +505,7 @@ Use this checklist on a **physical device** when possible (MNV often depends on 
 - [ ] `cd ios && pod install` succeeds.
 - [ ] Android: **`LPTrustedSDK.aar`** exists at **`android/app/libs/LPTrustedSDK.aar`**.
 - [ ] Android: **`justpay.json`** / **`mnv.json`** exist under **`res/raw/`** with correct names.
-- [ ] Android: If **`getDeviceId`** / diagnostics suggest empty device id despite valid **`res/raw`**, the **classpath mirror** from **[section 5](#5-android--gradle-app-module)** (**Classpath mirror for LPTrusted**) is applied (**`prepareLpTrustedClasspathResources`** + **`sourceSets.main.resources`**).
+- [ ] Android: **`lankapay_justpay_flutter` ≥ `0.2.23`** so **ClassLoader** lookups for **`res/raw/justpay.json`** and **`res/raw/mnv.json`** resolve through **Resources** in-plugin ([§5](#5-android--gradle-app-module)); **no** duplicate Gradle classpath mirror.
 - [ ] Android: **`network_security_config.xml`** present and referenced in the manifest.
 - [ ] iOS: **`LPTrustedSDK.xcframework`** on disk under **`ios/`** or **`ios/Runner/`**; **Runner** → **Embed & Sign**; both **`justpay.json`** and **`mnv.json`** in bundle; **`pod install`** succeeds.
 - [ ] iOS: **`justpay.json`** and **`mnv.json`** are in **Copy Bundle Resources**.
@@ -569,8 +539,8 @@ If you previously registered a **custom** `MethodChannel` in **`MainActivity`** 
 | Android: “Missing res/raw/…” | Files named **`justpay.json`** / **`mnv.json`** under **`app/src/main/res/raw/`**. |
 | Android: cleartext / SSL errors | **`network_security_config.xml`** domains vs MID; manifest **`networkSecurityConfig`**. |
 | Android: `package` mismatch | `justpay.json` **`package`** vs **`applicationId`** (flavors). |
-| Android: **`getDeviceId`** empty (**`deviceIdLength: -1`**) despite **`bridgeConfigValidation` OK** | LPTrusted may load JSON via **`ClassLoader.getResourceAsStream("res/raw/…")`**, not only **`openRawResource`**. Add the classpath mirror in **[section 5](#5-android--gradle-app-module)**. |
-| Android: **`getDeviceId`** empty **only in release** | Classpath mirror (**[section 5](#5-android--gradle-app-module)**) when **`res/raw`** looks valid. **`shrinkResources`**: **`tools:keep="@raw/justpay,@raw/mnv"`** (§9) or **`isShrinkResources = false`**. **`R8` stripping embedded AAR deps** (**SpongyCastle**, bridge, etc.) — add **`-keep`** rules in the **app** **`proguard-rules.pro`** per MID; **`0.2.22`** plugin **`consumer-rules`** only keep **`com.lankapay.justpay.**` (see §9). Versions **0.2.19–0.2.21** published wider plugin consumer rules if you prefer that over app rules. |
+| Android: **`getDeviceId`** empty (**`deviceIdLength: -1`**) despite **`bridgeConfigValidation` OK** | Use **`lankapay_justpay_flutter` ≥ `0.2.23`** (**ClassLoader** paths routed to **Resources**, [§5](#5-android--gradle-app-module)). Ensure **`LPTrustedSDKManager`** was not initialised earlier without the plugin wrapper. Plugins **&lt; `0.2.23`**: Legacy classpath mirror in §5 (duplicate APK path risk). |
+| Android: **`getDeviceId`** empty **only in release** | **`≥ 0.2.23`**: **`shrinkResources`**: **`tools:keep="@raw/justpay,@raw/mnv"`** (§9) or **`isShrinkResources = false`**. **`R8`** keeps for SpongyCastle / bridge per MID (§9). **`&lt; 0.2.23`**: Classpath mirror §5 + shrinking + R8. **`0.2.22`** consumer-rules keep **`com.lankapay.justpay.**` only; **0.2.19–0.2.21** had wider consumer-rules if needed. |
 | iOS: **`Framework 'LPTrustedSDK' not found`** | **`ios/LPTrustedSDK.xcframework`** or **`ios/Runner/`** on disk; **`pod install --repo-update`**; open **`Runner.xcworkspace`**. Use plugin **≥ 0.2.14** (slice **`FRAMEWORK_SEARCH_PATHS`**). |
 | iOS: `import LPTrustedSDK` / link errors | Same + **`pod install --repo-update`**; **`Runner.xcworkspace`**. If your xcframework uses unusual slice folder names, append them in **`post_install`** for **`lankapay_justpay_flutter`**. Optional vendored pod. |
 | iOS: HTTP load fails | **ATS** entries in **Info.plist** for operator hosts. |
